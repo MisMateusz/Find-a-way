@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Labirynt dla dwojga</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;700&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <main id="app">
+      <!-- EKRAN: start -->
+      <section class="screen" data-screen="home">
+        <h1>Labirynt dla dwojga</h1>
+        <p class="lead">Jedna osoba widzi mapę, druga się po niej porusza.</p>
+        <button data-go="lobby">Utwórz lobby</button>
+        <div class="join">
+          <label for="code">Kod lobby</label>
+          <input id="code" maxlength="8" autocomplete="off" />
+          <button data-go="lobby">Dołącz</button>
+        </div>
+      </section>
+
+      <!-- EKRAN: lobby -->
+      <section class="screen" data-screen="lobby" hidden>
+        <h2>Lobby</h2>
+        <p>Kod do przekazania drugiej osobie:</p>
+        <p class="code" id="lobby-code">K7QF</p>
+        <p id="lobby-status" class="lead">Czekam na drugiego gracza…</p>
+        <fieldset>
+          <legend>Twoja rola</legend>
+          <label><input type="radio" name="role" value="mapper" checked /> Mapper (widzi mapę)</label>
+          <label><input type="radio" name="role" value="explorer" /> Eksplorer (chodzi po labiryncie)</label>
+          <label><input type="radio" name="role" value="random" /> Losowo</label>
+        </fieldset>
+        <fieldset>
+          <legend>Poziom</legend>
+          <label><input type="radio" name="level" value="5" checked /> Łatwy (5×5)</label>
+          <label><input type="radio" name="level" value="7" /> Średni (7×7)</label>
+          <label><input type="radio" name="level" value="9" /> Trudny (9×9)</label>
+          <label><input type="radio" name="level" value="random" /> Losowo</label>
+        </fieldset>
+        <button id="start" data-go="mapper">Start</button>
+      </section>
+
+      <!-- EKRAN: mapper -->
+      <section class="screen" data-screen="mapper" hidden>
+        <h2>Mapper</h2>
+        <p class="lead">Dotknij lewej połowy kafelka, żeby obrócić go w lewo, prawej, żeby w prawo.</p>
+        <div class="board" id="board-mapper"></div>
+      </section>
+
+      <!-- EKRAN: eksplorer -->
+      <section class="screen" data-screen="explorer" hidden>
+        <div class="bar">
+          <h2>Eksplorer</h2>
+          <p class="time" id="timer">00:00</p>
+        </div>
+        <div class="board" id="board-explorer"></div>
+        <div class="dpad" aria-label="Sterowanie">
+          <button data-move="N" aria-label="W górę">↑</button>
+          <button data-move="W" aria-label="W lewo">←</button>
+          <button data-move="S" aria-label="W dół">↓</button>
+          <button data-move="E" aria-label="W prawo">→</button>
+        </div>
+      </section>
+
+      <!-- EKRAN: wynik -->
+      <section class="screen" data-screen="result" hidden>
+        <h2 id="result-title">Koniec gry</h2>
+        <p id="result-text" class="lead"></p>
+        <p class="time" id="result-time">00:00</p>
+        <button data-go="lobby">Rewanż</button>
+        <button data-go="home" class="secondary">Wyjdź</button>
+      </section>
+    </main>
+
+    <!-- Pasek deweloperski: skakanie między ekranami. Usuń przed publikacją. -->
+    <nav class="dev" aria-label="Podgląd ekranów (tymczasowy)">
+      <button data-go="home">start</button>
+      <button data-go="lobby">lobby</button>
+      <button data-go="mapper">mapper</button>
+      <button data-go="explorer">eksplorer</button>
+      <button data-go="result">wynik</button>
+    </nav>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
