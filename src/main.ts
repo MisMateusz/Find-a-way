@@ -1,29 +1,43 @@
 import './style.css';
 import { DELTA, OPPOSITE, TILE_DEFS, openings, type Dir, type TileType } from './core/tiles';
 
-// UWAGA: to jest szablon do ustawienia wyglądu. Wszystko dzieje się lokalnie w jednej
-// przeglądarce, bez sieci i bez hosta. Docelowo stan gry trzyma host (GameState),
-// a UI tylko rysuje to, co dostanie w wiadomości `view`.
-
 type Screen = 'home' | 'lobby' | 'mapper' | 'explorer' | 'result';
 interface Tile { type: TileType; rotation: number; trap: boolean }
 
-const N = 5;
+let N: number = 5;
+
+const startButton = document.getElementById('start');
+
+startButton?.addEventListener('click', () => {
+  const levelInput = document.querySelector<HTMLInputElement>('input[name="level"]:checked')?.value;
+  
+  if (levelInput === 'random') {
+    const levels = [5, 7, 9];
+    N = levels[Math.floor(Math.random() * levels.length)];
+  } else {
+    N = Number(levelInput ?? 5);
+  }
+
+  console.log("Wybrany rozmiar N:", N);
+  newBoard(); 
+});
+
 const types = Object.keys(TILE_DEFS) as TileType[];
 const rnd = (n: number) => Math.floor(Math.random() * n);
 const $ = <T extends HTMLElement>(sel: string) => document.querySelector<T>(sel)!;
 
 let board: Tile[] = [];
 let pos = { x: 0, y: 2 };
-const exit = { x: N - 1, y: 2 };
+let exit = { x: N - 1, y: 2 }; // zmienione na let, aby zmieniało się wraz z N
 let t0 = 0;
 let timerId = 0;
 
 const at = (x: number, y: number) => board[y * N + x];
 
 function newBoard() {
+  exit = { x: N - 1, y: 2 }; // aktualizacja pozycji wyjścia dla aktualnego N
   board = Array.from({ length: N * N }, () => ({ type: types[rnd(types.length)], rotation: 90 * rnd(4), trap: false }));
-  at(0, 2).type = 'cross'; // demo: start i wyjście zawsze przejezdne
+  at(0, 2).type = 'cross'; // start i wyjście zawsze przejezdne
   at(exit.x, exit.y).type = 'cross';
   for (let k = 0; k < 3; k++) {
     const x = 1 + rnd(N - 2), y = rnd(N);
@@ -38,17 +52,14 @@ function div(cls: string) {
   return d;
 }
 
-// Kafelek zastępczy: korytarze rysowane w CSS.
-// Gdy będą gotowe PNG: zastąp ciało funkcji elementem <img src=".../${type}.png">
-// z style.transform = `rotate(${rotation}deg)` i usuń klasy .arm/.hub z CSS.
-function tileEl(t: Tile, rotation: number=0, mark?: string): HTMLElement {
+function tileEl(t: Tile, mark?: string): HTMLElement {
 const container = document.createElement('div');
     container.className = 'tile';
 
     // 2. Tworzymy obrazek kafelka
     const img = document.createElement('img');
     img.src = `tiles/${t.type}.png`;
-    img.style.transform = `rotate(${rotation}deg)`;
+    img.style.transform = `rotate(${t.rotation}deg)`;
     img.draggable = false; // blokuje domyślne przeciąganie obrazka przez przeglądarkę
     container.appendChild(img);
 
@@ -66,10 +77,9 @@ const container = document.createElement('div');
 function renderMapper() {
   const el = $('#board-mapper');
   el.style.setProperty('--n', String(N));
-  // Mapper NIE widzi eksplorera ani pułapek.
   el.replaceChildren(
     ...board.map((t, i) => {
-      const c = tileEl(t, t.rotation, i === exit.y * N + exit.x ? '>' : undefined);
+      const c = tileEl(t, i === exit.y * N + exit.x ? '>' : undefined);
       c.dataset.i = String(i);
       return c;
     }),
@@ -80,7 +90,7 @@ $('#board-mapper').addEventListener('click', (e) => {
   const tile = (e.target as HTMLElement).closest<HTMLElement>('.tile');
   if (!tile) return;
   const r = tile.getBoundingClientRect();
-  const turn = e.clientX < r.left + r.width / 2 ? -90 : 90; // lewa połowa: w lewo, prawa: w prawo
+  const turn = e.clientX < r.left + r.width / 2 ? -90 : 90;
   const t = board[Number(tile.dataset.i)];
   t.rotation = (t.rotation + turn + 360) % 360;
   renderMapper();
@@ -97,8 +107,8 @@ function renderExplorer() {
       if (dist === 0) mark = '@';
       else if (dist === 1 && t.trap) mark = '!';
       else if (dist === 1 && x === exit.x && y === exit.y) mark = '>';
-      const c = tileEl(t, t.rotation,mark);
-      if (dist > 1) c.classList.add('fog'); // widać tylko własny kafelek i sąsiednie
+      const c = tileEl(t, mark);
+      if (dist > 1) c.classList.add('fog');
       return c;
     }),
   );
