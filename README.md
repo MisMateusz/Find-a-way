@@ -31,18 +31,28 @@ Celem jest opuszczenie labiryntu w jak najkrótszym czasie.
 
 Następujące kroki należy wykonać tylko podczas pierwszego uruchomienia programu:
 
-Najpierw należy wpisać do cmd komendę:
+Najpierw należy wpisać do terminala komendę:
 
+
+* tworzenie vite, tworzy podfolder, więc należy przejść do niego poleceniem cd ('cd labirynt') 
 ```
-npm create vite@latest labirynt ``` <= tworzenie vite, tworzy podfolder, więc należy przejść do niego poleceniem cd ('cd labirynt')
-```
+npm create vite@latest labirynt 
+``` 
+
 
 Następnie wybrać framework **Vanilla**, wariant **Typescript** oraz zainstalować z npm.
 
-Następnym krokiem jest wciśnięcie kombinacji ***Ctrl + C** oraz wpisanie następujących komend:
+Kolejnym krokiem jest wciśnięcie kombinacji ***Ctrl + C** oraz wpisanie następujących komend:
 
-npm install ```<= instalacja npm
+
+* instalacja npm
 ```
-npm run dev ```<= uruchomienie na swoim sprzęcie
+npm install
+```
+
+* uruchomienie na swoim sprzęcie
+```
+npm run dev
+```
 
 Na sam koniec należy wybrać link stronki, który pokaże się w terminalu i nacisnąć na niego kombinacją **Ctrl + LPM**
