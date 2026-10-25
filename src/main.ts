@@ -4,6 +4,18 @@ import { DELTA, OPPOSITE, TILE_DEFS, openings, type Dir, type TileType } from '.
 type Screen = 'home' | 'lobby' | 'mapper' | 'explorer' | 'result';
 interface Tile { type: TileType; rotation: number; trap: boolean }
 
+type Mark = 'explorer' | 'warning' | 'exit';
+
+// znaczniki - źródła
+const MARK_IMG: Record<Mark, string> = {
+  explorer: 'marks/explorer.png',
+  warning: 'marks/warning.png',
+  exit: 'marks/exit.png',
+};
+
+const asset = (path: string) => `${import.meta.env.BASE_URL}${path}`;
+
+//wybór trudności
 let N: number = 5;
 
 const startButton = document.getElementById('start');
@@ -18,7 +30,6 @@ startButton?.addEventListener('click', () => {
     N = Number(levelInput ?? 5);
   }
 
-  console.log("Wybrany rozmiar N:", N);
   newBoard(); 
 });
 
@@ -27,9 +38,9 @@ const rnd = (n: number) => Math.floor(Math.random() * n);
 const $ = <T extends HTMLElement>(sel: string) => document.querySelector<T>(sel)!;
 
 let board: Tile[] = [];
-let pos = { x: 0, y: 2 };
-let exit = { x: N - 1, y: 2 }; // zmienione na let, aby zmieniało się wraz z N
-let t0 = 0;
+let pos = { x: 0, y: 2 }; // spawn
+let exit = { x: N - 1, y: 2 }; // exit
+let t0 = 0; // timerki
 let timerId = 0;
 
 const at = (x: number, y: number) => board[y * N + x];
@@ -52,34 +63,39 @@ function div(cls: string) {
   return d;
 }
 
-function tileEl(t: Tile, mark?: string): HTMLElement {
+//kafelki
+function tileEl(t: Tile, mark?: Mark): HTMLElement {
 const container = document.createElement('div');
     container.className = 'tile';
 
-    // 2. Tworzymy obrazek kafelka
+    // tworzymy obrazek kafelka
     const img = document.createElement('img');
     img.src = `tiles/${t.type}.png`;
     img.style.transform = `rotate(${t.rotation}deg)`;
-    img.draggable = false; // blokuje domyślne przeciąganie obrazka przez przeglądarkę
+    img.draggable = false; 
     container.appendChild(img);
 
-    // 3. Jeśli jest mark (np. wyjście '>'), dodajemy go jako nakładkę
+    // wyjście dodajemy jako nakładkę
     if (mark) {
-        const markEl = document.createElement('span');
-        markEl.className = 'tile-mark';
-        markEl.textContent = mark;
-        container.appendChild(markEl);
+      const m = document.createElement('img');
+      m.src = asset(MARK_IMG[mark]);
+      m.className = `tile-mark ${mark}`;
+      m.alt = '';
+      m.draggable = false;
+      container.appendChild(m); 
     }
 
     return container;
 }
 
+
+// rendering widoku mappera
 function renderMapper() {
   const el = $('#board-mapper');
   el.style.setProperty('--n', String(N));
   el.replaceChildren(
     ...board.map((t, i) => {
-      const c = tileEl(t, i === exit.y * N + exit.x ? '>' : undefined);
+      const c = tileEl(t, i === exit.y * N + exit.x ? 'exit' : undefined);
       c.dataset.i = String(i);
       return c;
     }),
@@ -96,6 +112,8 @@ $('#board-mapper').addEventListener('click', (e) => {
   renderMapper();
 });
 
+
+// render widoku explorera
 function renderExplorer() {
   const el = $('#board-explorer');
   el.style.setProperty('--n', String(N));
@@ -103,10 +121,10 @@ function renderExplorer() {
     ...board.map((t, i) => {
       const x = i % N, y = Math.floor(i / N);
       const dist = Math.abs(x - pos.x) + Math.abs(y - pos.y);
-      let mark: string | undefined;
-      if (dist === 0) mark = '@';
-      else if (dist === 1 && t.trap) mark = '!';
-      else if (dist === 1 && x === exit.x && y === exit.y) mark = '>';
+      let mark: Mark | undefined;
+      if (dist === 0) mark = 'explorer';
+      else if (dist === 1 && t.trap) mark = 'warning';
+      else if (dist === 1 && x === exit.x && y === exit.y) mark = 'exit';
       const c = tileEl(t, mark);
       if (dist > 1) c.classList.add('fog');
       return c;
@@ -114,6 +132,8 @@ function renderExplorer() {
   );
 }
 
+
+// ruch i sprawdzanie czy jest możliwy
 function move(d: Dir) {
   const from = at(pos.x, pos.y);
   const nx = pos.x + DELTA[d][0], ny = pos.y + DELTA[d][1];
@@ -127,11 +147,14 @@ function move(d: Dir) {
   renderExplorer();
 }
 
+
+// timer 
 const fmt = (ms: number) => {
   const s = Math.floor(ms / 1000);
   return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 };
 
+// zakończenia
 function finish(result: 'win' | 'trap') {
   clearInterval(timerId);
   $('#result-title').textContent = result === 'win' ? 'Wyjście znalezione' : 'Pułapka';
