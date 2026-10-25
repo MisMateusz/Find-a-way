@@ -42,7 +42,7 @@ npm create vite@latest labirynt
 
 Następnie wybrać framework **Vanilla**, wariant **Typescript** oraz zainstalować z npm.
 
-Kolejnym krokiem jest wciśnięcie kombinacji ***Ctrl + C** oraz wpisanie następujących komend:
+Kolejnym krokiem jest wciśnięcie kombinacji **Ctrl + C** oraz wpisanie następujących komend:
 
 
 * instalacja npm
