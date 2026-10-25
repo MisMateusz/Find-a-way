@@ -1,25 +1,35 @@
-# Labirynt dla dwojga: szablon
+# Find-a-way
 
-## Uruchomienie (jednorazowo)
+## Zasady
+
+### Start
 ```
-npm create vite@latest labirynt -- --template vanilla-ts
-cd labirynt
-# skopiuj z tego szablonu: index.html, vite.config.ts, README.md, folder src/ i .github/ (nadpisz pliki)
-npm install
-npm run dev        # podgląd z odświeżaniem na żywo
-npm run build      # buduje folder dist
+Opcje są dwie, hostujesz lub dołączasz do lobby poprzez kod
+```
+### Lobby
+```
+Tu jako host oczekujesz na drugiego gracza
+
+Prześlij drugiej osobie widoczny kod, a w między czasie wybierz role oraz poziom trudności
+```
+### Mapper
+```
+Twoją rolą jest znalezienie optymalnej drogi i poprowadzenie nią explorera. Masz możliwość rotowaniem bloczków - użyj tego na własną korzyść
+```
+### Explorer
+```
+Twoją rolą jest wyjście z labiryntu. Uważaj, na drodze znajdziesz pułapki, a na pewno mgła ci w ich sprawnym znajdywaniu nie pomoże
+```
+### Cel
+```
+Celem jest ucieczka w jak najszybszym czasie
 ```
 
-## Gdzie co edytować
-- `src/style.css`: kolory (zmienne na górze), czcionka, przyciski, układ ekranów.
-- `index.html`: teksty i układ ekranów (home, lobby, mapper, explorer, result).
-- `src/core/tiles.ts`: definicje kafelków. Nowy typ = jedna linijka w `TileType` i jedna w `TILE_DEFS`.
-- `src/main.ts`: logika demo (losowa plansza, obracanie, ruch). Docelowo zastąpi ją sesja z siecią.
 
-## Kafelki jako obrazki
-W `tileEl()` (`src/main.ts`) zamień rysowanie CSS na `<img src="/tiles/${type}.png">` z
-`style.transform = rotate(${rotation}deg)`, a obrazki wrzuć do `public/tiles/`.
-W CSS dodaj `image-rendering: pixelated;`, żeby pixel art się nie rozmywał.
 
-## Pasek `.dev`
-Tymczasowy pasek na dole do przeskakiwania między ekranami. Usuń `<nav class="dev">` przed publikacją.
+## Uruchomienie 
+```
+npm create vite@latest labirynt <= tworzenie vite, tworzy podfolder, więc należy przejść do niego poleceniem cd ('cd labirynt')
+npm install <= instalacja npm
+npm run dev <= uruchomienie na swoim sprzęcie
+```
