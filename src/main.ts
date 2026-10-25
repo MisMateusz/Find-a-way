@@ -22,7 +22,7 @@ const startButton = document.getElementById('start');
 
 startButton?.addEventListener('click', () => {
   const levelInput = document.querySelector<HTMLInputElement>('input[name="level"]:checked')?.value;
-  
+  t0=Date.now();
   if (levelInput === 'random') {
     const levels = [5, 7, 9];
     N = levels[Math.floor(Math.random() * levels.length)];
@@ -171,11 +171,13 @@ function show(name: Screen) {
     const abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     $('#lobby-code').textContent = Array.from({ length: 4 }, () => abc[rnd(abc.length)]).join('');
   }
-  if (name === 'mapper') renderMapper();
+  if (name === 'mapper') {
+      renderMapper();
+      timerId = window.setInterval(() => ($('#timer1').textContent = fmt(Date.now() - t0)), 250)
+    }
   if (name === 'explorer') {
     renderExplorer();
-    t0 = Date.now();
-    timerId = window.setInterval(() => ($('#timer').textContent = fmt(Date.now() - t0)), 250);
+    timerId = window.setInterval(() => ($('#timer2').textContent = fmt(Date.now() - t0)), 250);
   }
 }
 
