@@ -29,8 +29,24 @@ startButton?.addEventListener('click', () => {
   } else {
     N = Number(levelInput ?? 5);
   }
-
   newBoard(); 
+  const roleInput = document.querySelector<HTMLInputElement>('input[name="role"]:checked')?.value;
+  if(roleInput==='mapper') {
+    show('mapper');
+  }
+  else if(roleInput==='explorer'){
+    show('explorer');
+  }
+  else {
+    const role = Math.floor(Math.random()*2);
+    if(role===0) {
+      show('mapper');
+    }
+    else {
+      show('explorer');
+    }
+  }
+
 });
 
 const types = Object.keys(TILE_DEFS) as TileType[];
