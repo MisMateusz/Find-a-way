@@ -1,4 +1,11 @@
 /* Paleta wyciągnięta ze szkicu kafelków. Zmieniaj tutaj. */
+@font-face {
+  font-family: 'Press Start 2P';
+  src: url('fonts/press-start-2p.ttf') format('truetype'); /* Dopasuj ścieżkę do swojego pliku */
+  font-weight: normal;
+  font-style: normal;
+}
+
 :root {
   --floor: #363636;   /* korytarz */
   --brick: #a8a8a8;   /* cegła */
@@ -9,7 +16,7 @@
   --ink: #000;        /* kontur */
   --exit: #d9b44a;    /* wyjście, akcenty (nowy kolor, do zmiany) */
   --danger: #c2453a;  /* pułapka (nowy kolor, do zmiany) */
-  --font: 'Pixelify Sans', ui-monospace, monospace;
+  --font: 'Press Start 2P', cursive;
 }
 
 * { box-sizing: border-box; }
