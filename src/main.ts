@@ -78,8 +78,12 @@ export class LabirynthGenerator {
     const types = Object.keys(TILE_DEFS) as TileType[];
     const rnd = (n: number) => Math.floor(Math.random() * n);
 
-    maze.exitPos = new Position(rnd(size), rnd(size));
     maze.startPos = new Position(rnd(size), rnd(size));
+    do{
+      maze.exitPos = new Position(rnd(size), rnd(size));
+      console.log(maze.startPos.x, " ",maze.startPos.y," ",maze.exitPos.x," ", maze.exitPos.y);
+    } while(Math.abs(maze.startPos.x-maze.exitPos.x)+Math.abs(maze.startPos.y-maze.exitPos.y)<1.5*(size-1));
+    
 
     maze.tiles = Array.from({ length: size * size }, () => ({
       type: types[rnd(types.length)],
