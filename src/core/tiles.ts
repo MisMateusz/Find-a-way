@@ -53,5 +53,5 @@ export function openings(type: TileType, rotation: number): Dir[] {
 
 export function openings_EXT(type: TileTypeExt, rotation: number): DirExt[] {
   const steps = (((rotation / 90) % 4) + 4) % 4;
-  return TILE_EXT_DEFS[type].map((d) => DIRS_EXT[(DIRS_EXT.indexOf(d) + steps) % 4]);
+  return TILE_EXT_DEFS[type].map((d) => DIRS_EXT[(DIRS_EXT.indexOf(d) + steps) % 8]);
 }

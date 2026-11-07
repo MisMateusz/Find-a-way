@@ -37,6 +37,7 @@
           <label><input type="radio" name="level" value="5" checked /> Łatwy (5x5)</label>
           <label><input type="radio" name="level" value="7" /> Średni (7x7)</label>
           <label><input type="radio" name="level" value="9" /> Trudny (9x9)</label>
+          <label><input type="radio" name="level" value="11" /> Ekspert (11x11)</label>
           <label><input type="radio" name="level" value="random" /> Losowo</label>
         </fieldset>
         <button id="start">Start</button>
@@ -62,6 +63,10 @@
           <button data-move="W" aria-label="W lewo">←</button>
           <button data-move="S" aria-label="W dół">↓</button>
           <button data-move="E" aria-label="W prawo">→</button>
+          <button class="diag" data-move="NW" aria-label="W lewo i w górę" hidden>↖</button>
+          <button class="diag" data-move="NE" aria-label="W prawo i w górę" hidden>↗</button>
+          <button class="diag" data-move="SW" aria-label="W lewo i w dół" hidden>↙</button>
+          <button class="diag" data-move="SE" aria-label="W prawo i w dół" hidden>↘</button>
         </div>
       </section>
 

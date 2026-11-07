@@ -1,5 +1,15 @@
 import './style.css';
-import { DELTA, OPPOSITE, TILE_DEFS, openings, type Dir, type TileType } from './core/tiles';
+import {
+  DELTA_EXT as DELTA,
+  OPPOSITE_EXT as OPPOSITE,
+  TILE_DEFS,
+  TILE_EXT_DEFS,
+  openings,
+  openings_EXT,
+  type DirExt as Dir,
+  type TileType,
+  type TileTypeExt,
+} from './core/tiles';
 
 type Screen = 'home' | 'lobby' | 'mapper' | 'explorer' | 'result';
 type Mark = 'explorer' | 'warning' | 'exit';
@@ -25,11 +35,11 @@ export class Position {
 // Klasa Tile
 export class Tile {
 
-  type: TileType;
+  type: TileType | TileTypeExt;
   rotation: number;
   trap: boolean; 
 
-  constructor(type: TileType,rotation: number = 0,trap: boolean = false) {
+  constructor(type: TileType | TileTypeExt, rotation: number = 0, trap: boolean = false) {
     this.type = type;
     this.rotation = rotation;
     this.trap = trap;
@@ -40,7 +50,9 @@ export class Tile {
   }
 
   getOpenings(): Dir[] {
-    return openings(this.type, this.rotation);
+    return this.type in TILE_DEFS
+      ? openings(this.type as TileType, this.rotation)
+      : openings_EXT(this.type as TileTypeExt, this.rotation);
   }
 }
 
@@ -55,6 +67,10 @@ export class Labirynth {
     this.startPos = new Position(0, 0);
     this.exitPos = new Position(0, 0);
     this.size = size
+  }
+
+  get ext(): boolean {
+    return this.size === 11;
   }
 
   at(x: number, y: number): Tile {
@@ -75,13 +91,11 @@ export class Labirynth {
 export class LabirynthGenerator {
   static generate(size: number): Labirynth {
     const maze = new Labirynth(size);
-    const types = Object.keys(TILE_DEFS) as TileType[];
+    const types = Object.keys(maze.ext ? TILE_EXT_DEFS : TILE_DEFS) as (TileType | TileTypeExt)[];
     const rnd = (n: number) => Math.floor(Math.random() * n);
-
-    maze.startPos = new Position(rnd(size), rnd(size));
     do{
+      maze.startPos = new Position(rnd(size), rnd(size));
       maze.exitPos = new Position(rnd(size), rnd(size));
-      console.log(maze.startPos.x, " ",maze.startPos.y," ",maze.exitPos.x," ", maze.exitPos.y);
     } while(Math.abs(maze.startPos.x-maze.exitPos.x)+Math.abs(maze.startPos.y-maze.exitPos.y)<1.5*(size-1));
     
 
@@ -168,18 +182,19 @@ export class NetService {
 
 // Klasa GameView
 export class GameView {
-  static renderTile(t: Tile, mark?: Mark): HTMLElement {
+  static renderTile(t: Tile, mark?: Mark, ext = false): HTMLElement {
     const container = document.createElement('div');
     container.className = 'tile';
 
     const img = document.createElement('img');
-    img.src = `tiles/${t.type}.png`;
+    img.src = asset(`${ext ? 'tiles_ext' : 'tiles'}/${t.type}${ext ? '_EXT' : ''}.png`);
     img.style.transform = `rotate(${t.rotation}deg)`;
     img.draggable = false;
     container.appendChild(img);
 
     if (mark) {
       const m = document.createElement('img');
+    
       m.src = asset(MARK_IMG[mark]);
       m.className = `tile-mark ${mark}`;
       m.alt = '';
@@ -197,7 +212,7 @@ export class GameView {
     el.replaceChildren(
       ...state.maze.tiles.map((t, i) => {
         const isExit = i === state.maze.exitPos.y * N + state.maze.exitPos.x;
-        const c = GameView.renderTile(t, isExit ? 'exit' : undefined);
+        const c = GameView.renderTile(t, isExit ? 'exit' : undefined, state.maze.ext);
         c.dataset.i = String(i);
         return c;
       })
@@ -211,13 +226,14 @@ export class GameView {
     el.replaceChildren(
       ...state.maze.tiles.map((t, i) => {
         const x = i % N, y = Math.floor(i / N);
-        const dist = Math.abs(x - state.explorerPos.x) + Math.abs(y - state.explorerPos.y);
+        const dx = Math.abs(x - state.explorerPos.x), dy = Math.abs(y - state.explorerPos.y);
+        const dist = state.maze.ext ? Math.max(dx, dy) : dx + dy;
         let mark: Mark | undefined;
         if (dist === 0) mark = 'explorer';
         else if (dist === 1 && t.trap) mark = 'warning';
         else if (dist === 1 && x === state.maze.exitPos.x && y === state.maze.exitPos.y) mark = 'exit';
         
-        const c = GameView.renderTile(t, mark);
+        const c = GameView.renderTile(t, mark, state.maze.ext);
         if (dist > 1) c.classList.add('fog');
         return c;
       })
@@ -260,6 +276,7 @@ export class GameSession {
     if (name === 'explorer') {
       if (!this.state) this.startNewGame();
       GameView.renderExplorer(this.state, '#board-explorer');
+      document.querySelectorAll<HTMLElement>('.diag').forEach((b) => (b.hidden = !this.state.maze.ext));
       this.startTimer('#timer2');
     }
   }
@@ -347,9 +364,12 @@ export class GameSession {
 
     document.addEventListener('keydown', (e) => {
       if (this.currentScreen !== 'explorer') return;
-      const map: Record<string, Dir> = { ArrowUp: 'N', w: 'N', ArrowRight: 'E', d: 'E', ArrowDown: 'S', s: 'S', ArrowLeft: 'W', a: 'W' };
+      const map: Record<string, Dir> = {
+        ArrowUp: 'N', w: 'N', ArrowRight: 'E', d: 'E', ArrowDown: 'S', s: 'S', ArrowLeft: 'W', a: 'W',
+        q: 'NW', e: 'NE', z: 'SW', c: 'SE',
+      };
       const d = map[e.key];
-      if (d) {
+      if (d && (d.length === 1 || this.state.maze.ext)) {
         e.preventDefault();
         this.move(d);
       }

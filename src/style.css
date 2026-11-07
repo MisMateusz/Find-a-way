@@ -1,7 +1,6 @@
-/* Paleta wyciągnięta ze szkicu kafelków. Zmieniaj tutaj. */
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('fonts/press-start-2p.ttf') format('truetype'); /* Dopasuj ścieżkę do swojego pliku */
+  src: url('fonts/press-start-2p.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
 }
