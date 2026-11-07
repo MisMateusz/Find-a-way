@@ -12,11 +12,11 @@
       <section class="screen" data-screen="home">
         <h1>Find-a-way</h1>
         <p class="lead">Jedna osoba widzi mapę, druga się po niej porusza.</p>
-        <button data-go="lobby">Utwórz lobby</button>
+        <button id="create">Utwórz lobby</button>
         <div class="join">
           <label for="code">Kod lobby</label>
           <input id="code" maxlength="8" autocomplete="off" />
-          <button data-go="lobby">Dołącz</button>
+          <button id="join">Dołącz</button>
         </div>
       </section>
 
@@ -26,17 +26,18 @@
         <p>Kod do przekazania drugiej osobie:</p>
         <p class="code" id="lobby-code">K7QF</p>
         <p id="lobby-status" class="lead">Czekam na drugiego gracza…</p>
-        <fieldset>
-          <legend>Twoja rola</legend>
-          <label><input type="radio" name="role" value="mapper" checked /> Mapper</label>
+        <fieldset id="role-set">
+          <legend >Twoja rola</legend>
+          <label><input type="radio" name="role" value="mapper" /> Mapper</label>
           <label><input type="radio" name="role" value="explorer" /> Eksplorer</label>
           <label><input type="radio" name="role" value="random" /> Losowo</label>
         </fieldset>
         <fieldset>
           <legend>Poziom</legend>
-          <label><input type="radio" name="level" value="5" checked /> Łatwy (5x5)</label>
+          <label><input type="radio" name="level" value="5" /> Łatwy (5x5)</label>
           <label><input type="radio" name="level" value="7" /> Średni (7x7)</label>
           <label><input type="radio" name="level" value="9" /> Trudny (9x9)</label>
+          <label><input type="radio" name="level" value="11" /> Ekspert (11x11)</label>
           <label><input type="radio" name="level" value="random" /> Losowo</label>
         </fieldset>
         <button id="start">Start</button>
@@ -62,6 +63,10 @@
           <button data-move="W" aria-label="W lewo">←</button>
           <button data-move="S" aria-label="W dół">↓</button>
           <button data-move="E" aria-label="W prawo">→</button>
+          <button class="diag" data-move="NW" aria-label="W lewo i w górę" hidden>↖</button>
+          <button class="diag" data-move="NE" aria-label="W prawo i w górę" hidden>↗</button>
+          <button class="diag" data-move="SW" aria-label="W lewo i w dół" hidden>↙</button>
+          <button class="diag" data-move="SE" aria-label="W prawo i w dół" hidden>↘</button>
         </div>
       </section>
 
@@ -74,17 +79,6 @@
         <button data-go="home" class="secondary">Wyjdź</button>
       </section>
     </main>
-
-    <!-- Pasek deweloperski: skakanie między ekranami. Usuń przed publikacją. -->
-    <nav class="dev" aria-label="Podgląd ekranów (tymczasowy)">
-      <button data-go="home">start</button>
-      <button data-go="lobby">lobby</button>
-      <button data-go="mapper">mapper</button>
-      <button data-go="explorer">eksplorer</button>
-      <button data-go="result">wynik</button>
-    </nav>
-
-    
 
     <script type="module" src="/src/main.ts"></script>
   </body>
