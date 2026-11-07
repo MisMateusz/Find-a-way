@@ -127,3 +127,6 @@ input[type='radio'] { accent-color: var(--exit); width: 18px; height: 18px; }
   background: var(--ink);
 }
 .dev button { font-size: 13px; padding: 4px 8px; border-width: 2px; box-shadow: none; }
+
+[hidden] { display: none !important; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }

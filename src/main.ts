@@ -11,6 +11,8 @@ import {
   type TileTypeExt,
 } from './core/tiles';
 
+import { Peer, type DataConnection} from 'peerjs';
+
 type Screen = 'home' | 'lobby' | 'mapper' | 'explorer' | 'result';
 type Mark = 'explorer' | 'warning' | 'exit';
 
@@ -21,6 +23,14 @@ const MARK_IMG: Record<Mark, string> = {
 };
 
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path}`;
+
+type msg = 
+| {t: 'init', role: 'mapper' | 'explorer', maze: Labirynth} 
+| {t: 'rotation', i: number, rotation: number}
+| {t: 'end', result: 'win' | 'trap'
+};
+
+const ID_PREFIX = 'findaway-';
 
 // Klasa Position
 export class Position {
@@ -75,6 +85,14 @@ export class Labirynth {
 
   at(x: number, y: number): Tile {
     return this.tiles[y * this.size + x];
+  }
+
+  static fromData(d: Labirynth): Labirynth {
+    const m = new Labirynth(d.size);
+    m.startPos = new Position(d.startPos.x, d.startPos.y);
+    m.exitPos = new Position(d.exitPos.x, d.exitPos.y);
+    m.tiles = d.tiles.map((t) => new Tile(t.type, t.rotation, t.trap));
+    return m;
   }
 
   canPass(fromPos: Position, toPos: Position, dir: Dir): boolean {
@@ -171,13 +189,55 @@ export class LobbySetting {
 
 // Klasa NetService
 export class NetService {
-  createLobby(): string {
+  onMessage: (msg: msg) => void = () => {};
+  onClose: () => void = () => {};
+  onError: (err: any) => void = () => {};
+
+  private peer?: Peer;
+  private conn?: DataConnection;
+
+  get connected() { return !!this.conn?.open; }
+
+  host(onCode: (code: string) => void, onGuest: () => void) {
+    this.close();
     const abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    return Array.from({ length: 4 }, () => abc[Math.floor(Math.random() * abc.length)]).join('');
+    const code = Array.from({ length: 4 }, () => abc[Math.floor(Math.random() * abc.length)]).join('');
+    const peer = (this.peer = new Peer(ID_PREFIX + code));
+    peer.on('open', () => onCode(code)); 
+    peer.on('connection', (c) => {      
+      if (this.conn) return c.close();   
+      this.attach(c);
+      c.on('open', onGuest);             
+    });
+    peer.on('error', (e) => (e.type === 'unavailable-id' ? this.host(onCode, onGuest) : this.onError(e.type)));
   }
-  join(code: string) {}
-  send(data: any) {}
-  close() {}
+
+  join(code: string, onOpen: () => void) {
+    this.close();
+    const peer = (this.peer = new Peer());
+    peer.on('open', () => {
+      const c = peer.connect(ID_PREFIX + code, { reliable: true, serialization: 'json' });
+      this.attach(c);
+      c.on('open', onOpen);
+    });
+    peer.on('error', (e) => this.onError(e.type)); 
+  }
+ 
+  private attach(c: DataConnection) {
+    this.conn = c;
+    c.on('data', (d) => this.onMessage(d as msg));
+    c.on('close', () => {
+      if (this.conn === c) { this.conn = undefined; this.onClose(); }
+    });
+  }
+ 
+  send(m: msg) { if (this.conn?.open) this.conn.send(m); }
+ 
+  close() {
+    this.conn = undefined;
+    this.peer?.destroy();
+    this.peer = undefined;
+  }
 }
 
 // Klasa GameView
@@ -242,29 +302,35 @@ export class GameView {
 }
 
 // Klasa GameSession 
+// Klasa GameSession 
 export class GameSession {
   settings = new LobbySetting();
   net = new NetService();
   state!: GameState;
   currentScreen: Screen = 'home';
+  isHost = false;
+  assignedRole: 'mapper' | 'explorer' = 'explorer';
 
   constructor() {
+    this.initNetListeners();
     this.initListeners();
     this.show('home');
   }
 
   show(name: Screen) {
-    this.currentScreen = name;
+   this.currentScreen = name;
+
     document.querySelectorAll<HTMLElement>('.screen').forEach((s) => (s.hidden = s.dataset.screen !== name));
-    
+
     if (name !== 'explorer' && name !== 'mapper') {
       if (this.state?.timerId) clearInterval(this.state.timerId);
     }
 
     if (name === 'lobby') {
-      const code = this.net.createLobby();
-      const lobbyCodeEl = document.getElementById('lobby-code');
-      if (lobbyCodeEl) lobbyCodeEl.textContent = code;
+      const statusEl = document.getElementById('lobby-status');
+      if (statusEl) {
+        statusEl.textContent = this.isHost ? 'Oczekiwanie na dołączenie gracza...' : 'Połączono z pokojem.';
+      }
     }
 
     if (name === 'mapper') {
@@ -276,15 +342,8 @@ export class GameSession {
     if (name === 'explorer') {
       if (!this.state) this.startNewGame();
       GameView.renderExplorer(this.state, '#board-explorer');
-      document.querySelectorAll<HTMLElement>('.diag').forEach((b) => (b.hidden = !this.state.maze.ext));
       this.startTimer('#timer2');
     }
-  }
-
-  startNewGame() {
-    const size = this.settings.getMazeSize();
-    this.state = new GameState(size);
-    this.state.t0 = Date.now();
   }
 
   startTimer(timerSelector: string) {
@@ -302,8 +361,13 @@ export class GameSession {
     return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
   }
 
-  finish(result: 'win' | 'trap') {
+  finish(result: 'win' | 'trap', notifyNetwork = true) {
     if (this.state?.timerId) clearInterval(this.state.timerId);
+    
+    if (notifyNetwork && this.net.connected) {
+      this.net.send({ t: 'end', result });
+    }
+
     const titleEl = document.getElementById('result-title');
     const textEl = document.getElementById('result-text');
     const timeEl = document.getElementById('result-time');
@@ -315,43 +379,173 @@ export class GameSession {
     this.show('result');
   }
 
-  move(dir: Dir) {
+  move(dir: Dir, notifyNetwork = true) {
     const res = this.state.moveExplorer(dir);
     if (!res) return;
+
+    if (notifyNetwork && this.net.connected) {
+      this.net.send({ t: 'move', dir } as any); 
+    }
+
     if (res === 'trap' || res === 'win') {
-      this.finish(res);
+      this.finish(res, notifyNetwork);
     } else {
       GameView.renderExplorer(this.state, '#board-explorer');
     }
   }
 
+  private initNetListeners() {
+    this.net.onMessage = (msg: msg | any) => this.handleNetworkMessage(msg);
+    this.net.onClose = () => {
+      alert('Połączenie zostało zerwane.');
+      this.show('home');
+    };
+    this.net.onError = (err) => {
+      alert(`Błąd połączenia: ${err}`);
+    };
+  }
+
+  private handleNetworkMessage(msg: any) {
+    switch (msg.t) {
+      case 'init':
+        // Otrzymanie stanu początkowego od hosta
+        this.assignedRole = msg.role;
+        this.state = new GameState(msg.maze.size); // lub odtworzenie ze stanu maze
+        this.state.maze = msg.maze;
+        this.state.t0 = Date.now();
+        this.show(this.assignedRole);
+        break;
+
+      case 'rotation':
+        // Zgodnie z: {t: 'rotation', i: number, rotation: number}
+        if (this.state?.maze?.tiles[msg.i]) {
+          this.state.maze.tiles[msg.i].rotate(msg.rotation);
+          if (this.currentScreen === 'mapper') {
+            GameView.renderMapper(this.state, '#board-mapper');
+          }
+        }
+        break;
+
+      case 'move':
+        // Synchronizacja ruchu gracza z sieci
+        this.move(msg.dir, false);
+        break;
+
+      case 'end':
+        // Zgodnie z: {t: 'end', result: 'win' | 'trap'}
+        this.finish(msg.result, false);
+        break;
+    }
+  }
+
+  createLobby() {
+    this.isHost = true;
+    this.net.host(
+      (code) => {
+        const codeEl = document.getElementById('lobby-code');
+        if (codeEl) codeEl.textContent = code;
+        this.show('lobby');
+      },
+      () => {
+        const statusEl = document.getElementById('lobby-status');
+        if (statusEl) statusEl.textContent = 'Gracz dołączył! Można rozpoczynać.';
+      }
+    );
+  }
+
+  joinLobby(code: string) {
+    this.isHost = false;
+    this.net.join(code, () => {
+      const statusEl = document.getElementById('lobby-status');
+      if (statusEl) statusEl.textContent = 'Połączono z hostem. Oczekiwanie na start...';
+      this.show('lobby');
+    });
+  }
+
+  startNewGame() {
+    if (!this.isHost) return;
+
+    const roleInput = document.querySelector<HTMLInputElement>('input[name="role"]:checked')?.value;
+    const hostRole = roleInput === 'random' || !roleInput 
+      ? (Math.random() < 0.5 ? 'mapper' : 'explorer') 
+      : (roleInput as 'mapper' | 'explorer');
+    
+    this.assignedRole = hostRole;
+    const guestRole: 'mapper' | 'explorer' = hostRole === 'mapper' ? 'explorer' : 'mapper';
+
+    const size = this.settings.getMazeSize();
+    this.state = new GameState(size);
+    this.state.t0 = Date.now();
+
+    // Wysłanie wiadomości 'init' do gościa
+    if (this.net.connected) {
+      this.net.send({
+        t: 'init',
+        role: guestRole,
+        maze: this.state.maze
+      });
+    }
+
+    this.show(this.assignedRole);
+  }
+
   initListeners() {
+
+    const codeEl = document.getElementById('lobby-code')!;
+    document.getElementById('create')?.addEventListener('click', () => {
+      this.isHost = true;
+      codeEl.textContent = '…';
+      this.net.host(
+        (code) => (codeEl.textContent = code),
+        () => this.show('lobby'),
+      );
+      this.show('lobby');
+    });
+
+    document.getElementById('join')?.addEventListener('click', () => {
+      const code = document.querySelector<HTMLInputElement>('#code')!.value.trim().toUpperCase();
+      if (!code) return;
+      this.isHost = false;
+      this.net.join(code, () => {
+        codeEl.textContent = code;
+        this.show('lobby');
+      });
+    });
+
     const startButton = document.getElementById('start');
     startButton?.addEventListener('click', () => {
       const levelInput = document.querySelector<HTMLInputElement>('input[name="level"]:checked')?.value ?? '5';
       this.settings.difficulty = levelInput;
-      this.startNewGame();
 
-      const roleInput = document.querySelector<HTMLInputElement>('input[name="role"]:checked')?.value;
-      if (roleInput === 'mapper') {
-        this.show('mapper');
-      } else if (roleInput === 'explorer') {
-        this.show('explorer');
-      } else {
-        const role = Math.floor(Math.random() * 2);
-        this.show(role === 0 ? 'mapper' : 'explorer');
+      if (this.net.connected && this.isHost) {
+        this.startNewGame();
+      } else if (!this.net.connected) {
+        // Tryb lokalny / offline
+        this.startNewGame();
+        const roleInput = document.querySelector<HTMLInputElement>('input[name="role"]:checked')?.value;
+        const role = roleInput === 'random' || !roleInput 
+          ? (Math.random() < 0.5 ? 'mapper' : 'explorer') 
+          : (roleInput as 'mapper' | 'explorer');
+        this.assignedRole = role;
+        this.show(this.assignedRole);
       }
     });
 
     document.getElementById('board-mapper')?.addEventListener('click', (e) => {
+      if (this.assignedRole !== 'mapper') return; // Opcjonalna blokada dla roli
       const tile = (e.target as HTMLElement).closest<HTMLElement>('.tile');
       if (!tile) return;
       const r = tile.getBoundingClientRect();
       const turn = e.clientX < r.left + r.width / 2 ? -90 : 90;
       const idx = Number(tile.dataset.i);
+      
       const t = this.state.maze.tiles[idx];
       t.rotate(turn);
       GameView.renderMapper(this.state, '#board-mapper');
+
+      if (this.net.connected) {
+        this.net.send({ t: 'rotation', i: idx, rotation: turn });
+      }
     });
 
     document.addEventListener('click', (e) => {
@@ -363,13 +557,10 @@ export class GameSession {
     });
 
     document.addEventListener('keydown', (e) => {
-      if (this.currentScreen !== 'explorer') return;
-      const map: Record<string, Dir> = {
-        ArrowUp: 'N', w: 'N', ArrowRight: 'E', d: 'E', ArrowDown: 'S', s: 'S', ArrowLeft: 'W', a: 'W',
-        q: 'NW', e: 'NE', z: 'SW', c: 'SE',
-      };
+      if (this.currentScreen !== 'explorer' || this.assignedRole !== 'explorer') return;
+      const map: Record<string, Dir> = { ArrowUp: 'N', w: 'N', ArrowRight: 'E', d: 'E', ArrowDown: 'S', s: 'S', ArrowLeft: 'W', a: 'W' };
       const d = map[e.key];
-      if (d && (d.length === 1 || this.state.maze.ext)) {
+      if (d) {
         e.preventDefault();
         this.move(d);
       }

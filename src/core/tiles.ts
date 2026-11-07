@@ -36,7 +36,7 @@ export const TILE_EXT_DEFS: Record<TileTypeExt, DirExt[]> = {
   slight_turn_right: ['NE', 'S'],
   star: ['N' , 'NE' , 'E' , 'SE' , 'S' , 'SW' , 'W' , 'NW'],
   tee: ['N', 'E', 'S'],
-  turn: ['N', 'E']
+  turn: ['S', 'E']
 }
 
 export const OPPOSITE: Record<Dir, Dir> = { N: 'S', E: 'W', S: 'N', W: 'E' };
@@ -52,6 +52,6 @@ export function openings(type: TileType, rotation: number): Dir[] {
 }
 
 export function openings_EXT(type: TileTypeExt, rotation: number): DirExt[] {
-  const steps = (((rotation / 90) % 4) + 4) % 4;
+  const steps = (((rotation / 45) % 8) + 8) % 8;
   return TILE_EXT_DEFS[type].map((d) => DIRS_EXT[(DIRS_EXT.indexOf(d) + steps) % 8]);
 }
