@@ -26,15 +26,15 @@
         <p>Kod do przekazania drugiej osobie:</p>
         <p class="code" id="lobby-code">K7QF</p>
         <p id="lobby-status" class="lead">Czekam na drugiego gracza…</p>
-        <fieldset>
-          <legend>Twoja rola</legend>
-          <label><input type="radio" name="role" value="mapper" checked /> Mapper</label>
+        <fieldset id="role-set">
+          <legend >Twoja rola</legend>
+          <label><input type="radio" name="role" value="mapper" /> Mapper</label>
           <label><input type="radio" name="role" value="explorer" /> Eksplorer</label>
           <label><input type="radio" name="role" value="random" /> Losowo</label>
         </fieldset>
         <fieldset>
           <legend>Poziom</legend>
-          <label><input type="radio" name="level" value="5" checked /> Łatwy (5x5)</label>
+          <label><input type="radio" name="level" value="5" /> Łatwy (5x5)</label>
           <label><input type="radio" name="level" value="7" /> Średni (7x7)</label>
           <label><input type="radio" name="level" value="9" /> Trudny (9x9)</label>
           <label><input type="radio" name="level" value="11" /> Ekspert (11x11)</label>
@@ -79,17 +79,6 @@
         <button data-go="home" class="secondary">Wyjdź</button>
       </section>
     </main>
-
-    <!-- Pasek deweloperski: skakanie między ekranami. Usuń przed publikacją. -->
-    <nav class="dev" aria-label="Podgląd ekranów (tymczasowy)">
-      <button data-go="home">start</button>
-      <button data-go="lobby">lobby</button>
-      <button data-go="mapper">mapper</button>
-      <button data-go="explorer">eksplorer</button>
-      <button data-go="result">wynik</button>
-    </nav>
-
-    
 
     <script type="module" src="/src/main.ts"></script>
   </body>

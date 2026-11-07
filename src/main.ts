@@ -25,12 +25,29 @@ const MARK_IMG: Record<Mark, string> = {
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path}`;
 
 type msg = 
-| {t: 'init', role: 'mapper' | 'explorer', maze: Labirynth} 
-| {t: 'rotation', i: number, rotation: number}
-| {t: 'end', result: 'win' | 'trap'
-};
+| { t: 'init', role: 'mapper' | 'explorer', maze: Labirynth } 
+| { t: 'rotation', i: number, rotation: number }
+| { t: 'vote', level: string }
+| { t: 'end', result: 'win' | 'trap' };
 
 const ID_PREFIX = 'findaway-';
+
+const KEYS_STORE = 'findaway-keys';
+const DEFAULT_KEYS: Record<Dir, string> = { N: 'w', NE: 'e', E: 'd', SE: 'c', S: 's', SW: 'z', W: 'a', NW: 'q' };
+
+const loadKeys = (): Record<Dir, string> => {
+  try {
+    return { ...DEFAULT_KEYS, ...JSON.parse(localStorage.getItem(KEYS_STORE) ?? '{}') };
+  } catch {
+    return { ...DEFAULT_KEYS };
+  }
+};
+
+const saveKeys = (keys: Record<Dir, string>) => {
+  try {
+    localStorage.setItem(KEYS_STORE, JSON.stringify(keys));
+  } catch {}
+};
 
 // Klasa Position
 export class Position {
@@ -142,8 +159,8 @@ export class GameState {
   t0: number = 0;
   timerId: number = 0;
 
-  constructor(size: number) {
-    this.maze = LabirynthGenerator.generate(size);
+  constructor(size: number, maze?: Labirynth) {
+    this.maze = maze ?? LabirynthGenerator.generate(size);
     this.explorerPos = new Position(this.maze.startPos.x, this.maze.startPos.y);
   }
 
@@ -265,10 +282,37 @@ export class GameView {
     return container;
   }
 
+  static label(text: string): HTMLElement {
+    const d = document.createElement('div');
+    d.className = 'label';
+    d.textContent = text;
+    return d;
+  }
+
+  static mount(el: HTMLElement, N: number) {
+    let wrap = el.parentElement!;
+    if (!wrap.classList.contains('board-wrap')) {
+      wrap = document.createElement('div');
+      wrap.className = 'board-wrap';
+      const cols = document.createElement('div');
+      cols.className = 'cols';
+      const rows = document.createElement('div');
+      rows.className = 'rows';
+      el.replaceWith(wrap);
+      wrap.append(document.createElement('div'), cols, rows, el);
+    }
+    if (wrap.dataset.n === String(N)) return;
+    wrap.dataset.n = String(N);
+    wrap.style.setProperty('--n', String(N));
+    wrap.querySelector('.cols')!.replaceChildren(...Array.from({ length: N }, (_, c) => GameView.label(String(c + 1))));
+    wrap.querySelector('.rows')!.replaceChildren(...Array.from({ length: N }, (_, r) => GameView.label(String.fromCharCode(65 + r))));
+  }
+
   static renderMapper(state: GameState, containerSel: string) {
     const el = document.querySelector<HTMLElement>(containerSel)!;
     const N = state.maze.size;
     el.style.setProperty('--n', String(N));
+    GameView.mount(el, N);
     el.replaceChildren(
       ...state.maze.tiles.map((t, i) => {
         const isExit = i === state.maze.exitPos.y * N + state.maze.exitPos.x;
@@ -283,6 +327,7 @@ export class GameView {
     const el = document.querySelector<HTMLElement>(containerSel)!;
     const N = state.maze.size;
     el.style.setProperty('--n', String(N));
+    GameView.mount(el, N);
     el.replaceChildren(
       ...state.maze.tiles.map((t, i) => {
         const x = i % N, y = Math.floor(i / N);
@@ -302,7 +347,6 @@ export class GameView {
 }
 
 // Klasa GameSession 
-// Klasa GameSession 
 export class GameSession {
   settings = new LobbySetting();
   net = new NetService();
@@ -310,10 +354,15 @@ export class GameSession {
   currentScreen: Screen = 'home';
   isHost = false;
   assignedRole: 'mapper' | 'explorer' = 'explorer';
+  guestVote?: string;
+  keys: Record<Dir, string> = loadKeys();
+  capturing: Dir | null = null;
+  drawKeys = () => {};
 
   constructor() {
     this.initNetListeners();
     this.initListeners();
+    this.initKeyMap();
     this.show('home');
   }
 
@@ -326,7 +375,15 @@ export class GameSession {
       if (this.state?.timerId) clearInterval(this.state.timerId);
     }
 
+    document.getElementById('keys-btn')!.hidden = name !== 'explorer';
+    if (name !== 'explorer') {
+      document.getElementById('keys-panel')!.hidden = true;
+      this.capturing = null;
+    }
+
     if (name === 'lobby') {
+      document.getElementById('start')!.hidden = !this.isHost;
+      document.getElementById('role-set')!.hidden = !this.isHost;
       const statusEl = document.getElementById('lobby-status');
       if (statusEl) {
         statusEl.textContent = this.isHost ? 'Oczekiwanie na dołączenie gracza...' : 'Połączono z pokojem.';
@@ -342,6 +399,7 @@ export class GameSession {
     if (name === 'explorer') {
       if (!this.state) this.startNewGame();
       GameView.renderExplorer(this.state, '#board-explorer');
+      document.querySelectorAll<HTMLElement>('.diag').forEach((b) => (b.hidden = !this.state.maze.ext));
       this.startTimer('#timer2');
     }
   }
@@ -379,23 +437,19 @@ export class GameSession {
     this.show('result');
   }
 
-  move(dir: Dir, notifyNetwork = true) {
+  move(dir: Dir) {
     const res = this.state.moveExplorer(dir);
     if (!res) return;
 
-    if (notifyNetwork && this.net.connected) {
-      this.net.send({ t: 'move', dir } as any); 
-    }
-
     if (res === 'trap' || res === 'win') {
-      this.finish(res, notifyNetwork);
+      this.finish(res);
     } else {
       GameView.renderExplorer(this.state, '#board-explorer');
     }
   }
 
   private initNetListeners() {
-    this.net.onMessage = (msg: msg | any) => this.handleNetworkMessage(msg);
+    this.net.onMessage = (m) => this.handleNetworkMessage(m);
     this.net.onClose = () => {
       alert('Połączenie zostało zerwane.');
       this.show('home');
@@ -405,61 +459,35 @@ export class GameSession {
     };
   }
 
-  private handleNetworkMessage(msg: any) {
-    switch (msg.t) {
+  private handleNetworkMessage(m: msg) {
+    switch (m.t) {
       case 'init':
-        // Otrzymanie stanu początkowego od hosta
-        this.assignedRole = msg.role;
-        this.state = new GameState(msg.maze.size); // lub odtworzenie ze stanu maze
-        this.state.maze = msg.maze;
+        this.assignedRole = m.role;
+        this.state = new GameState(m.maze.size, Labirynth.fromData(m.maze));
         this.state.t0 = Date.now();
         this.show(this.assignedRole);
         break;
 
       case 'rotation':
-        // Zgodnie z: {t: 'rotation', i: number, rotation: number}
-        if (this.state?.maze?.tiles[msg.i]) {
-          this.state.maze.tiles[msg.i].rotate(msg.rotation);
-          if (this.currentScreen === 'mapper') {
-            GameView.renderMapper(this.state, '#board-mapper');
-          }
+        this.state.maze.tiles[m.i].rotate(m.rotation);
+        if (this.currentScreen === 'explorer') {
+          GameView.renderExplorer(this.state, '#board-explorer');
         }
         break;
 
-      case 'move':
-        // Synchronizacja ruchu gracza z sieci
-        this.move(msg.dir, false);
+      case 'vote':
+        this.guestVote = m.level;
         break;
 
       case 'end':
-        // Zgodnie z: {t: 'end', result: 'win' | 'trap'}
-        this.finish(msg.result, false);
+        this.finish(m.result, false);
         break;
     }
   }
 
-  createLobby() {
-    this.isHost = true;
-    this.net.host(
-      (code) => {
-        const codeEl = document.getElementById('lobby-code');
-        if (codeEl) codeEl.textContent = code;
-        this.show('lobby');
-      },
-      () => {
-        const statusEl = document.getElementById('lobby-status');
-        if (statusEl) statusEl.textContent = 'Gracz dołączył! Można rozpoczynać.';
-      }
-    );
-  }
-
-  joinLobby(code: string) {
-    this.isHost = false;
-    this.net.join(code, () => {
-      const statusEl = document.getElementById('lobby-status');
-      if (statusEl) statusEl.textContent = 'Połączono z hostem. Oczekiwanie na start...';
-      this.show('lobby');
-    });
+  sendVote() {
+    const level = document.querySelector<HTMLInputElement>('input[name="level"]:checked')?.value ?? '5';
+    this.net.send({ t: 'vote', level });
   }
 
   startNewGame() {
@@ -473,20 +501,77 @@ export class GameSession {
     this.assignedRole = hostRole;
     const guestRole: 'mapper' | 'explorer' = hostRole === 'mapper' ? 'explorer' : 'mapper';
 
+    const hostVote = document.querySelector<HTMLInputElement>('input[name="level"]:checked')?.value ?? '5';
+    const votes = [hostVote, this.guestVote ?? hostVote];
+    this.settings.difficulty = votes[Math.floor(Math.random() * votes.length)];
+
     const size = this.settings.getMazeSize();
     this.state = new GameState(size);
     this.state.t0 = Date.now();
 
-    // Wysłanie wiadomości 'init' do gościa
-    if (this.net.connected) {
-      this.net.send({
-        t: 'init',
-        role: guestRole,
-        maze: this.state.maze
-      });
-    }
+    this.net.send({ t: 'init', role: guestRole, maze: this.state.maze });
 
     this.show(this.assignedRole);
+  }
+
+  bindKey(d: Dir, key: string) {
+    const other = (Object.keys(this.keys) as Dir[]).find((o) => this.keys[o] === key);
+    if (other) this.keys[other] = this.keys[d];
+    this.keys[d] = key;
+    saveKeys(this.keys);
+  }
+
+  initKeyMap() {
+    const btn = document.createElement('button');
+    btn.id = 'keys-btn';
+    btn.textContent = 'Klawisze';
+    const panel = document.createElement('div');
+    panel.id = 'keys-panel';
+    panel.hidden = true;
+    document.body.append(btn, panel);
+
+    const arrows: Record<Dir, string> = { N: '↑', NE: '↗', E: '→', SE: '↘', S: '↓', SW: '↙', W: '←', NW: '↖' };
+    const fmt = (k: string) => (k === ' ' ? 'SPACJA' : k.toUpperCase());
+
+    this.drawKeys = () => {
+      const rows = (Object.keys(arrows) as Dir[]).map((d) => {
+        const row = document.createElement('div');
+        row.className = 'keys-row';
+        const name = document.createElement('span');
+        name.textContent = arrows[d];
+        const b = document.createElement('button');
+        b.textContent = this.capturing === d ? '…' : fmt(this.keys[d]);
+        b.onclick = () => {
+          this.capturing = d;
+          this.drawKeys();
+        };
+        row.append(name, b);
+        return row;
+      });
+      const reset = document.createElement('button');
+      reset.textContent = 'Domyślne';
+      reset.onclick = () => {
+        this.keys = { ...DEFAULT_KEYS };
+        this.capturing = null;
+        saveKeys(this.keys);
+        this.drawKeys();
+      };
+      const title = document.createElement('div');
+      title.textContent = 'Klawisze ruchu';
+      const close = document.createElement('button');
+      close.textContent = 'Zamknij';
+      close.onclick = () => {
+        panel.hidden = true;
+        this.capturing = null;
+      };
+      panel.replaceChildren(title, ...rows, reset, close);
+    };
+
+    btn.onclick = () => {
+      panel.hidden = !panel.hidden;
+      this.capturing = null;
+      this.drawKeys();
+    };
   }
 
   initListeners() {
@@ -494,10 +579,14 @@ export class GameSession {
     const codeEl = document.getElementById('lobby-code')!;
     document.getElementById('create')?.addEventListener('click', () => {
       this.isHost = true;
+      this.guestVote = undefined;
       codeEl.textContent = '…';
       this.net.host(
         (code) => (codeEl.textContent = code),
-        () => this.show('lobby'),
+        () => {
+          this.guestVote = undefined;
+          this.show('lobby');
+        },
       );
       this.show('lobby');
     });
@@ -509,30 +598,20 @@ export class GameSession {
       this.net.join(code, () => {
         codeEl.textContent = code;
         this.show('lobby');
+        this.sendVote();
       });
     });
 
-    const startButton = document.getElementById('start');
-    startButton?.addEventListener('click', () => {
-      const levelInput = document.querySelector<HTMLInputElement>('input[name="level"]:checked')?.value ?? '5';
-      this.settings.difficulty = levelInput;
+    document.querySelectorAll<HTMLInputElement>('input[name="level"]').forEach((r) =>
+      r.addEventListener('change', () => {
+        if (!this.isHost) this.sendVote();
+      }),
+    );
 
-      if (this.net.connected && this.isHost) {
-        this.startNewGame();
-      } else if (!this.net.connected) {
-        // Tryb lokalny / offline
-        this.startNewGame();
-        const roleInput = document.querySelector<HTMLInputElement>('input[name="role"]:checked')?.value;
-        const role = roleInput === 'random' || !roleInput 
-          ? (Math.random() < 0.5 ? 'mapper' : 'explorer') 
-          : (roleInput as 'mapper' | 'explorer');
-        this.assignedRole = role;
-        this.show(this.assignedRole);
-      }
-    });
+    document.getElementById('start')?.addEventListener('click', () => this.startNewGame());
 
     document.getElementById('board-mapper')?.addEventListener('click', (e) => {
-      if (this.assignedRole !== 'mapper') return; // Opcjonalna blokada dla roli
+      if (this.assignedRole !== 'mapper') return;
       const tile = (e.target as HTMLElement).closest<HTMLElement>('.tile');
       if (!tile) return;
       const r = tile.getBoundingClientRect();
@@ -543,9 +622,7 @@ export class GameSession {
       t.rotate(turn);
       GameView.renderMapper(this.state, '#board-mapper');
 
-      if (this.net.connected) {
-        this.net.send({ t: 'rotation', i: idx, rotation: turn });
-      }
+      this.net.send({ t: 'rotation', i: idx, rotation: turn });
     });
 
     document.addEventListener('click', (e) => {
@@ -557,9 +634,19 @@ export class GameSession {
     });
 
     document.addEventListener('keydown', (e) => {
+      if (this.capturing) {
+        if (['Shift', 'Control', 'Alt', 'Meta'].includes(e.key)) return;
+        e.preventDefault();
+        if (e.key !== 'Escape') this.bindKey(this.capturing, e.key.toLowerCase());
+        this.capturing = null;
+        this.drawKeys();
+        return;
+      }
+      if (!document.getElementById('keys-panel')!.hidden) return;
       if (this.currentScreen !== 'explorer' || this.assignedRole !== 'explorer') return;
-      const map: Record<string, Dir> = { ArrowUp: 'N', w: 'N', ArrowRight: 'E', d: 'E', ArrowDown: 'S', s: 'S', ArrowLeft: 'W', a: 'W' };
-      const d = map[e.key];
+      const arrows: Record<string, Dir> = { ArrowUp: 'N', ArrowRight: 'E', ArrowDown: 'S', ArrowLeft: 'W' };
+      const key = e.key.toLowerCase();
+      const d = arrows[e.key] ?? (Object.keys(this.keys) as Dir[]).find((k) => this.keys[k] === key);
       if (d) {
         e.preventDefault();
         this.move(d);
