@@ -12,6 +12,7 @@ import {
 } from './core/tiles';
 
 import { Peer, type DataConnection} from 'peerjs';
+import { saveResult, topResults } from './core/db';
 
 type Screen = 'home' | 'lobby' | 'mapper' | 'explorer' | 'result';
 type Mark = 'explorer' | 'warning' | 'exit';
@@ -355,6 +356,7 @@ export class GameSession {
   isHost = false;
   assignedRole: 'mapper' | 'explorer' = 'explorer';
   guestVote?: string;
+  lastMs = 0;
   keys: Record<Dir, string> = loadKeys();
   capturing: Dir | null = null;
   drawKeys = () => {};
@@ -434,6 +436,9 @@ export class GameSession {
     if (textEl) textEl.textContent = result === 'win' ? 'Successfully escaped the maze.' : 'The explorer fell into a trap.';
     if (timeEl) timeEl.textContent = this.formatTime(this.state.elapsedTime());
     
+    this.lastMs = this.state.elapsedTime();
+    document.getElementById('save-box')!.hidden = !(this.isHost && result === 'win');
+    this.loadTop();
     this.show('result');
   }
 
@@ -483,6 +488,19 @@ export class GameSession {
         this.finish(m.result, false);
         break;
     }
+  }
+
+  async loadTop() {
+    const level = this.state.maze.size;
+    document.getElementById('top-title')!.textContent = `Top 10 (${level}x${level})`;
+    const rows = await topResults(level);
+    document.getElementById('top')!.replaceChildren(
+      ...rows.map((r) => {
+        const li = document.createElement('li');
+        li.textContent = `${r.nickname} ${this.formatTime(r.completion_time)}`;
+        return li;
+      }),
+    );
   }
 
   sendVote() {
@@ -589,6 +607,20 @@ export class GameSession {
         },
       );
       this.show('lobby');
+    });
+
+    document.getElementById('save')?.addEventListener('click', async () => {
+      const nickname = document.querySelector<HTMLInputElement>('#nick')!.value.trim();
+      if (!nickname) return;
+      const box = document.getElementById('save-box')!;
+      box.hidden = true;
+      const ok = await saveResult({ nickname, completion_time: this.lastMs, level_type: this.state.maze.size });
+      if (!ok) {
+        alert('Nie udało się zapisać wyniku.');
+        box.hidden = false;
+        return;
+      }
+      this.loadTop();
     });
 
     document.getElementById('join')?.addEventListener('click', () => {
