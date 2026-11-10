@@ -1,9 +1,9 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pl">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Labirynt dla dwojga</title>
+    <title>Find-a-way</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
   </head>
   <body>
@@ -11,34 +11,59 @@
       <!-- EKRAN: start -->
       <section class="screen" data-screen="home">
         <h1>Find-a-way</h1>
+<<<<<<< Updated upstream
         <p class="lead">Jedna osoba widzi mapę, druga się po niej porusza.</p>
-        <button id="create">Utwórz lobby</button>
+        <button data-go="lobby">Utwórz lobby</button>
+=======
+        <p class="lead">Two people: <br> One sees the map, the other moves through maze.</p>
+        <button id="create">Create lobby</button>
+>>>>>>> Stashed changes
         <div class="join">
-          <label for="code">Kod lobby</label>
+          <label for="code">Lobby code</label>
           <input id="code" maxlength="8" autocomplete="off" />
-          <button id="join">Dołącz</button>
+<<<<<<< Updated upstream
+          <button data-go="lobby">Dołącz</button>
+=======
+          <button id="join">Join</button>
+>>>>>>> Stashed changes
         </div>
       </section>
 
       <!-- EKRAN: lobby -->
       <section class="screen" data-screen="lobby" hidden>
         <h2>Lobby</h2>
-        <p>Kod do przekazania drugiej osobie:</p>
+        <p>Lobby code:</p>
         <p class="code" id="lobby-code">K7QF</p>
+<<<<<<< Updated upstream
         <p id="lobby-status" class="lead">Czekam na drugiego gracza…</p>
-        <fieldset id="role-set">
-          <legend >Twoja rola</legend>
-          <label><input type="radio" name="role" value="mapper" /> Mapper</label>
+        <fieldset>
+          <legend>Twoja rola</legend>
+          <label><input type="radio" name="role" value="mapper" checked /> Mapper</label>
           <label><input type="radio" name="role" value="explorer" /> Eksplorer</label>
           <label><input type="radio" name="role" value="random" /> Losowo</label>
         </fieldset>
         <fieldset>
           <legend>Poziom</legend>
-          <label><input type="radio" name="level" value="5" /> Łatwy (5x5)</label>
+          <label><input type="radio" name="level" value="5" checked /> Łatwy (5x5)</label>
           <label><input type="radio" name="level" value="7" /> Średni (7x7)</label>
           <label><input type="radio" name="level" value="9" /> Trudny (9x9)</label>
-          <label><input type="radio" name="level" value="11" /> Ekspert (11x11)</label>
           <label><input type="radio" name="level" value="random" /> Losowo</label>
+=======
+        <p id="lobby-status" class="lead">Waiting for the second player…</p>
+        <fieldset id="role-set">
+          <legend >Roles</legend>
+          <label><input type="radio" name="role" value="mapper" /> Mapper</label>
+          <label><input type="radio" name="role" value="explorer" /> Explorer</label>
+          <label><input type="radio" name="role" value="random" /> Random</label>
+        </fieldset>
+        <fieldset>
+          <legend>Level</legend>
+          <label><input type="radio" name="level" value="5" /> Easy (5x5)</label>
+          <label><input type="radio" name="level" value="7" /> Medium (7x7)</label>
+          <label><input type="radio" name="level" value="9" /> Hard (9x9)</label>
+          <label><input type="radio" name="level" value="11" /> Expert (11x11)</label>
+          <label><input type="radio" name="level" value="random" /> Random</label>
+>>>>>>> Stashed changes
         </fieldset>
         <button id="start">Start</button>
       </section>
@@ -46,7 +71,7 @@
       <!-- EKRAN: mapper -->
       <section class="screen" data-screen="mapper" hidden>
         <h2>Mapper</h2>
-        <p class="lead">Dotknij lewej połowy kafelka, żeby obrócić go w lewo, prawej, żeby w prawo.</p>
+        <p class="lead">Tap the left half of a tile to rotate it left, the right half to rotate it right.</p>
         <p class="time" id="timer1">00:00</p>
         <div class="board" id="board-mapper"></div>
       </section>
@@ -59,26 +84,44 @@
         </div>
         <div class="board" id="board-explorer"></div>
         <div class="dpad" aria-label="Sterowanie">
+<<<<<<< Updated upstream
           <button data-move="N" aria-label="W górę">↑</button>
           <button data-move="W" aria-label="W lewo">←</button>
           <button data-move="S" aria-label="W dół">↓</button>
           <button data-move="E" aria-label="W prawo">→</button>
-          <button class="diag" data-move="NW" aria-label="W lewo i w górę" hidden>↖</button>
-          <button class="diag" data-move="NE" aria-label="W prawo i w górę" hidden>↗</button>
-          <button class="diag" data-move="SW" aria-label="W lewo i w dół" hidden>↙</button>
-          <button class="diag" data-move="SE" aria-label="W prawo i w dół" hidden>↘</button>
+=======
+          <button data-move="N" aria-label="W górę"><img src="arrows/nArrow.png" alt="up" id="upArrow"></button>
+          <button data-move="W" aria-label="W lewo"><img src="arrows/nArrow.png" alt="left" id="leftArrow"></button>
+          <button data-move="S" aria-label="W dół"><img src="arrows/nArrow.png" alt="down" id="downArrow"></button>
+          <button data-move="E" aria-label="W prawo"><img src="arrows/nArrow.png" alt="right" id="rightArrow"></button>
+          <button class="diag" data-move="NW" aria-label="W lewo i w górę" hidden><img src="arrows/dArrow.png" alt="up-left" id="upLeftArrow"></button>
+          <button class="diag" data-move="NE" aria-label="W prawo i w górę" hidden><img src="arrows/dArrow.png" alt="up-right" id="upRightArrow"></button>
+          <button class="diag" data-move="SW" aria-label="W lewo i w dół" hidden><img src="arrows/dArrow.png" alt="down-left" id="downLeftArrow"></button>
+          <button class="diag" data-move="SE" aria-label="W prawo i w dół" hidden><img src="arrows/dArrow.png" alt="down-right" id="downRightArrow"></button>
+>>>>>>> Stashed changes
         </div>
       </section>
 
       <!-- EKRAN: wynik -->
       <section class="screen" data-screen="result" hidden>
-        <h2 id="result-title">Koniec gry</h2>
+        <h2 id="result-title">Finish</h2>
         <p id="result-text" class="lead"></p>
         <p class="time" id="result-time">00:00</p>
-        <button data-go="lobby">Rewanż</button>
-        <button data-go="home" class="secondary">Wyjdź</button>
+        <button data-go="lobby">Play Again</button>
+        <button data-go="home" class="secondary">Exit</button>
       </section>
     </main>
+
+    <!-- Pasek deweloperski: skakanie między ekranami. Usuń przed publikacją. -->
+    <nav class="dev" aria-label="Podgląd ekranów (tymczasowy)">
+      <button data-go="home">start</button>
+      <button data-go="lobby">lobby</button>
+      <button data-go="mapper">mapper</button>
+      <button data-go="explorer">eksplorer</button>
+      <button data-go="result">wynik</button>
+    </nav>
+
+    
 
     <script type="module" src="/src/main.ts"></script>
   </body>
