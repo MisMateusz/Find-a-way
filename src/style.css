@@ -128,3 +128,37 @@ input[type='radio'] { accent-color: var(--exit); width: 18px; height: 18px; }
   background: var(--ink);
 }
 .dev button { font-size: 13px; padding: 4px 8px; border-width: 2px; box-shadow: none; }
+<<<<<<< Updated upstream
+=======
+
+[hidden] { display: none !important; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+#keys-panel {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10;
+  display: grid; gap: 8px; padding: 16px; min-width: 240px;
+  background: var(--floor); border: 4px solid var(--ink);
+  box-shadow: inset 0 0 0 3px var(--mortar), 0 0 0 100vmax rgba(0, 0, 0, 0.6);
+  font-size: 12px;
+}
+
+#rightArrow{
+  rotate: 90deg;
+}
+#downArrow{
+  rotate: 180deg;
+}
+#leftArrow{
+  rotate: 270deg;
+}
+
+#upRightArrow{
+  rotate: 90deg;
+}
+#downRightArrow{
+  rotate: 180deg;
+}
+#downLeftArrow{
+  rotate: 270deg;
+}
+>>>>>>> Stashed changes

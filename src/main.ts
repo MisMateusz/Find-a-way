@@ -246,9 +246,18 @@ export class GameSession {
     }
 
     if (name === 'lobby') {
+<<<<<<< Updated upstream
       const code = this.net.createLobby();
       const lobbyCodeEl = document.getElementById('lobby-code');
       if (lobbyCodeEl) lobbyCodeEl.textContent = code;
+=======
+      document.getElementById('start')!.hidden = !this.isHost;
+      document.getElementById('role-set')!.hidden = !this.isHost;
+      const statusEl = document.getElementById('lobby-status');
+      if (statusEl) {
+        statusEl.textContent = this.isHost ? 'Waiting for other player...' : 'Second player connected to lobby.';
+      }
+>>>>>>> Stashed changes
     }
 
     if (name === 'mapper') {
@@ -291,8 +300,8 @@ export class GameSession {
     const textEl = document.getElementById('result-text');
     const timeEl = document.getElementById('result-time');
     
-    if (titleEl) titleEl.textContent = result === 'win' ? 'Wyjście znalezione' : 'Pułapka';
-    if (textEl) textEl.textContent = result === 'win' ? 'Udało się wydostać z labiryntu.' : 'Eksplorer wpadł w pułapkę.';
+    if (titleEl) titleEl.textContent = result === 'win' ? 'Exit found' : 'Trap';
+    if (textEl) textEl.textContent = result === 'win' ? 'Successfully escaped the maze.' : 'The explorer fell into a trap.';
     if (timeEl) timeEl.textContent = this.formatTime(this.state.elapsedTime());
     
     this.show('result');
@@ -308,6 +317,135 @@ export class GameSession {
     }
   }
 
+<<<<<<< Updated upstream
+=======
+  private initNetListeners() {
+    this.net.onMessage = (m) => this.handleNetworkMessage(m);
+    this.net.onClose = () => {
+      alert('Połączenie zostało zerwane.');
+      this.show('home');
+    };
+    this.net.onError = (err) => {
+      alert(`Błąd połączenia: ${err}`);
+    };
+  }
+
+  private handleNetworkMessage(m: msg) {
+    switch (m.t) {
+      case 'init':
+        this.assignedRole = m.role;
+        this.state = new GameState(m.maze.size, Labirynth.fromData(m.maze));
+        this.state.t0 = Date.now();
+        this.show(this.assignedRole);
+        break;
+
+      case 'rotation':
+        this.state.maze.tiles[m.i].rotate(m.rotation);
+        if (this.currentScreen === 'explorer') {
+          GameView.renderExplorer(this.state, '#board-explorer');
+        }
+        break;
+
+      case 'vote':
+        this.guestVote = m.level;
+        break;
+
+      case 'end':
+        this.finish(m.result, false);
+        break;
+    }
+  }
+
+  sendVote() {
+    const level = document.querySelector<HTMLInputElement>('input[name="level"]:checked')?.value ?? '5';
+    this.net.send({ t: 'vote', level });
+  }
+
+  startNewGame() {
+    if (!this.isHost) return;
+
+    const roleInput = document.querySelector<HTMLInputElement>('input[name="role"]:checked')?.value;
+    const hostRole = roleInput === 'random' || !roleInput 
+      ? (Math.random() < 0.5 ? 'mapper' : 'explorer') 
+      : (roleInput as 'mapper' | 'explorer');
+    
+    this.assignedRole = hostRole;
+    const guestRole: 'mapper' | 'explorer' = hostRole === 'mapper' ? 'explorer' : 'mapper';
+
+    const hostVote = document.querySelector<HTMLInputElement>('input[name="level"]:checked')?.value ?? '5';
+    const votes = [hostVote, this.guestVote ?? hostVote];
+    this.settings.difficulty = votes[Math.floor(Math.random() * votes.length)];
+
+    const size = this.settings.getMazeSize();
+    this.state = new GameState(size);
+    this.state.t0 = Date.now();
+
+    this.net.send({ t: 'init', role: guestRole, maze: this.state.maze });
+
+    this.show(this.assignedRole);
+  }
+
+  bindKey(d: Dir, key: string) {
+    const other = (Object.keys(this.keys) as Dir[]).find((o) => this.keys[o] === key);
+    if (other) this.keys[other] = this.keys[d];
+    this.keys[d] = key;
+    saveKeys(this.keys);
+  }
+
+  initKeyMap() {
+    const btn = document.createElement('button');
+    btn.id = 'keys-btn';
+    btn.textContent = 'Klawisze';
+    const panel = document.createElement('div');
+    panel.id = 'keys-panel';
+    panel.hidden = true;
+    document.body.append(btn, panel);
+
+    const arrows: Record<Dir, string> = { N:'Up', NE: 'Up Right', E: 'Right', SE: 'Down Right', S: 'Down', SW: 'Down Left', W: 'Left', NW: 'Up Left' };
+    const fmt = (k: string) => (k === ' ' ? 'SPACJA' : k.toUpperCase());
+
+    this.drawKeys = () => {
+      const rows = (Object.keys(arrows) as Dir[]).map((d) => {
+        const row = document.createElement('div');
+        row.className = 'keys-row';
+        const name = document.createElement('span');
+        name.textContent = arrows[d];
+        const b = document.createElement('button');
+        b.textContent = this.capturing === d ? '…' : fmt(this.keys[d]);
+        b.onclick = () => {
+          this.capturing = d;
+          this.drawKeys();
+        };
+        row.append(name, b);
+        return row;
+      });
+      const reset = document.createElement('button');
+      reset.textContent = 'Domyślne';
+      reset.onclick = () => {
+        this.keys = { ...DEFAULT_KEYS };
+        this.capturing = null;
+        saveKeys(this.keys);
+        this.drawKeys();
+      };
+      const title = document.createElement('div');
+      title.textContent = 'Klawisze ruchu';
+      const close = document.createElement('button');
+      close.textContent = 'Zamknij';
+      close.onclick = () => {
+        panel.hidden = true;
+        this.capturing = null;
+      };
+      panel.replaceChildren(title, ...rows, reset, close);
+    };
+
+    btn.onclick = () => {
+      panel.hidden = !panel.hidden;
+      this.capturing = null;
+      this.drawKeys();
+    };
+  }
+
+>>>>>>> Stashed changes
   initListeners() {
     const startButton = document.getElementById('start');
     startButton?.addEventListener('click', () => {
