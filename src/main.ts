@@ -1,5 +1,17 @@
 import './style.css';
-import { DELTA, OPPOSITE, TILE_DEFS, openings, type Dir, type TileType } from './core/tiles';
+import {
+  DELTA_EXT as DELTA,
+  OPPOSITE_EXT as OPPOSITE,
+  TILE_DEFS,
+  TILE_EXT_DEFS,
+  openings,
+  openings_EXT,
+  type DirExt as Dir,
+  type TileType,
+  type TileTypeExt,
+} from './core/tiles';
+
+import { Peer, type DataConnection} from 'peerjs';
 
 type Screen = 'home' | 'lobby' | 'mapper' | 'explorer' | 'result';
 type Mark = 'explorer' | 'warning' | 'exit';
@@ -11,6 +23,31 @@ const MARK_IMG: Record<Mark, string> = {
 };
 
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path}`;
+
+type msg = 
+| { t: 'init', role: 'mapper' | 'explorer', maze: Labirynth } 
+| { t: 'rotation', i: number, rotation: number }
+| { t: 'vote', level: string }
+| { t: 'end', result: 'win' | 'trap' };
+
+const ID_PREFIX = 'findaway-';
+
+const KEYS_STORE = 'findaway-keys';
+const DEFAULT_KEYS: Record<Dir, string> = { N: 'w', NE: 'e', E: 'd', SE: 'c', S: 's', SW: 'z', W: 'a', NW: 'q' };
+
+const loadKeys = (): Record<Dir, string> => {
+  try {
+    return { ...DEFAULT_KEYS, ...JSON.parse(localStorage.getItem(KEYS_STORE) ?? '{}') };
+  } catch {
+    return { ...DEFAULT_KEYS };
+  }
+};
+
+const saveKeys = (keys: Record<Dir, string>) => {
+  try {
+    localStorage.setItem(KEYS_STORE, JSON.stringify(keys));
+  } catch {}
+};
 
 // Klasa Position
 export class Position {
@@ -25,11 +62,11 @@ export class Position {
 // Klasa Tile
 export class Tile {
 
-  type: TileType;
+  type: TileType | TileTypeExt;
   rotation: number;
   trap: boolean; 
 
-  constructor(type: TileType,rotation: number = 0,trap: boolean = false) {
+  constructor(type: TileType | TileTypeExt, rotation: number = 0, trap: boolean = false) {
     this.type = type;
     this.rotation = rotation;
     this.trap = trap;
@@ -40,7 +77,9 @@ export class Tile {
   }
 
   getOpenings(): Dir[] {
-    return openings(this.type, this.rotation);
+    return this.type in TILE_DEFS
+      ? openings(this.type as TileType, this.rotation)
+      : openings_EXT(this.type as TileTypeExt, this.rotation);
   }
 }
 
@@ -57,8 +96,20 @@ export class Labirynth {
     this.size = size
   }
 
+  get ext(): boolean {
+    return this.size === 11;
+  }
+
   at(x: number, y: number): Tile {
     return this.tiles[y * this.size + x];
+  }
+
+  static fromData(d: Labirynth): Labirynth {
+    const m = new Labirynth(d.size);
+    m.startPos = new Position(d.startPos.x, d.startPos.y);
+    m.exitPos = new Position(d.exitPos.x, d.exitPos.y);
+    m.tiles = d.tiles.map((t) => new Tile(t.type, t.rotation, t.trap));
+    return m;
   }
 
   canPass(fromPos: Position, toPos: Position, dir: Dir): boolean {
@@ -75,13 +126,11 @@ export class Labirynth {
 export class LabirynthGenerator {
   static generate(size: number): Labirynth {
     const maze = new Labirynth(size);
-    const types = Object.keys(TILE_DEFS) as TileType[];
+    const types = Object.keys(maze.ext ? TILE_EXT_DEFS : TILE_DEFS) as (TileType | TileTypeExt)[];
     const rnd = (n: number) => Math.floor(Math.random() * n);
-
-    maze.startPos = new Position(rnd(size), rnd(size));
     do{
+      maze.startPos = new Position(rnd(size), rnd(size));
       maze.exitPos = new Position(rnd(size), rnd(size));
-      console.log(maze.startPos.x, " ",maze.startPos.y," ",maze.exitPos.x," ", maze.exitPos.y);
     } while(Math.abs(maze.startPos.x-maze.exitPos.x)+Math.abs(maze.startPos.y-maze.exitPos.y)<1.5*(size-1));
     
 
@@ -110,8 +159,8 @@ export class GameState {
   t0: number = 0;
   timerId: number = 0;
 
-  constructor(size: number) {
-    this.maze = LabirynthGenerator.generate(size);
+  constructor(size: number, maze?: Labirynth) {
+    this.maze = maze ?? LabirynthGenerator.generate(size);
     this.explorerPos = new Position(this.maze.startPos.x, this.maze.startPos.y);
   }
 
@@ -157,29 +206,72 @@ export class LobbySetting {
 
 // Klasa NetService
 export class NetService {
-  createLobby(): string {
+  onMessage: (msg: msg) => void = () => {};
+  onClose: () => void = () => {};
+  onError: (err: any) => void = () => {};
+
+  private peer?: Peer;
+  private conn?: DataConnection;
+
+  get connected() { return !!this.conn?.open; }
+
+  host(onCode: (code: string) => void, onGuest: () => void) {
+    this.close();
     const abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    return Array.from({ length: 4 }, () => abc[Math.floor(Math.random() * abc.length)]).join('');
+    const code = Array.from({ length: 4 }, () => abc[Math.floor(Math.random() * abc.length)]).join('');
+    const peer = (this.peer = new Peer(ID_PREFIX + code));
+    peer.on('open', () => onCode(code)); 
+    peer.on('connection', (c) => {      
+      if (this.conn) return c.close();   
+      this.attach(c);
+      c.on('open', onGuest);             
+    });
+    peer.on('error', (e) => (e.type === 'unavailable-id' ? this.host(onCode, onGuest) : this.onError(e.type)));
   }
-  join(code: string) {}
-  send(data: any) {}
-  close() {}
+
+  join(code: string, onOpen: () => void) {
+    this.close();
+    const peer = (this.peer = new Peer());
+    peer.on('open', () => {
+      const c = peer.connect(ID_PREFIX + code, { reliable: true, serialization: 'json' });
+      this.attach(c);
+      c.on('open', onOpen);
+    });
+    peer.on('error', (e) => this.onError(e.type)); 
+  }
+ 
+  private attach(c: DataConnection) {
+    this.conn = c;
+    c.on('data', (d) => this.onMessage(d as msg));
+    c.on('close', () => {
+      if (this.conn === c) { this.conn = undefined; this.onClose(); }
+    });
+  }
+ 
+  send(m: msg) { if (this.conn?.open) this.conn.send(m); }
+ 
+  close() {
+    this.conn = undefined;
+    this.peer?.destroy();
+    this.peer = undefined;
+  }
 }
 
 // Klasa GameView
 export class GameView {
-  static renderTile(t: Tile, mark?: Mark): HTMLElement {
+  static renderTile(t: Tile, mark?: Mark, ext = false): HTMLElement {
     const container = document.createElement('div');
     container.className = 'tile';
 
     const img = document.createElement('img');
-    img.src = `tiles/${t.type}.png`;
+    img.src = asset(`${ext ? 'tiles_ext' : 'tiles'}/${t.type}${ext ? '_EXT' : ''}.png`);
     img.style.transform = `rotate(${t.rotation}deg)`;
     img.draggable = false;
     container.appendChild(img);
 
     if (mark) {
       const m = document.createElement('img');
+    
       m.src = asset(MARK_IMG[mark]);
       m.className = `tile-mark ${mark}`;
       m.alt = '';
@@ -190,14 +282,41 @@ export class GameView {
     return container;
   }
 
+  static label(text: string): HTMLElement {
+    const d = document.createElement('div');
+    d.className = 'label';
+    d.textContent = text;
+    return d;
+  }
+
+  static mount(el: HTMLElement, N: number) {
+    let wrap = el.parentElement!;
+    if (!wrap.classList.contains('board-wrap')) {
+      wrap = document.createElement('div');
+      wrap.className = 'board-wrap';
+      const cols = document.createElement('div');
+      cols.className = 'cols';
+      const rows = document.createElement('div');
+      rows.className = 'rows';
+      el.replaceWith(wrap);
+      wrap.append(document.createElement('div'), cols, rows, el);
+    }
+    if (wrap.dataset.n === String(N)) return;
+    wrap.dataset.n = String(N);
+    wrap.style.setProperty('--n', String(N));
+    wrap.querySelector('.cols')!.replaceChildren(...Array.from({ length: N }, (_, c) => GameView.label(String(c + 1))));
+    wrap.querySelector('.rows')!.replaceChildren(...Array.from({ length: N }, (_, r) => GameView.label(String.fromCharCode(65 + r))));
+  }
+
   static renderMapper(state: GameState, containerSel: string) {
     const el = document.querySelector<HTMLElement>(containerSel)!;
     const N = state.maze.size;
     el.style.setProperty('--n', String(N));
+    GameView.mount(el, N);
     el.replaceChildren(
       ...state.maze.tiles.map((t, i) => {
         const isExit = i === state.maze.exitPos.y * N + state.maze.exitPos.x;
-        const c = GameView.renderTile(t, isExit ? 'exit' : undefined);
+        const c = GameView.renderTile(t, isExit ? 'exit' : undefined, state.maze.ext);
         c.dataset.i = String(i);
         return c;
       })
@@ -208,16 +327,18 @@ export class GameView {
     const el = document.querySelector<HTMLElement>(containerSel)!;
     const N = state.maze.size;
     el.style.setProperty('--n', String(N));
+    GameView.mount(el, N);
     el.replaceChildren(
       ...state.maze.tiles.map((t, i) => {
         const x = i % N, y = Math.floor(i / N);
-        const dist = Math.abs(x - state.explorerPos.x) + Math.abs(y - state.explorerPos.y);
+        const dx = Math.abs(x - state.explorerPos.x), dy = Math.abs(y - state.explorerPos.y);
+        const dist = state.maze.ext ? Math.max(dx, dy) : dx + dy;
         let mark: Mark | undefined;
         if (dist === 0) mark = 'explorer';
         else if (dist === 1 && t.trap) mark = 'warning';
         else if (dist === 1 && x === state.maze.exitPos.x && y === state.maze.exitPos.y) mark = 'exit';
         
-        const c = GameView.renderTile(t, mark);
+        const c = GameView.renderTile(t, mark, state.maze.ext);
         if (dist > 1) c.classList.add('fog');
         return c;
       })
@@ -231,33 +352,42 @@ export class GameSession {
   net = new NetService();
   state!: GameState;
   currentScreen: Screen = 'home';
+  isHost = false;
+  assignedRole: 'mapper' | 'explorer' = 'explorer';
+  guestVote?: string;
+  keys: Record<Dir, string> = loadKeys();
+  capturing: Dir | null = null;
+  drawKeys = () => {};
 
   constructor() {
+    this.initNetListeners();
     this.initListeners();
+    this.initKeyMap();
     this.show('home');
   }
 
   show(name: Screen) {
-    this.currentScreen = name;
+   this.currentScreen = name;
+
     document.querySelectorAll<HTMLElement>('.screen').forEach((s) => (s.hidden = s.dataset.screen !== name));
-    
+
     if (name !== 'explorer' && name !== 'mapper') {
       if (this.state?.timerId) clearInterval(this.state.timerId);
     }
 
+    document.getElementById('keys-btn')!.hidden = name !== 'explorer';
+    if (name !== 'explorer') {
+      document.getElementById('keys-panel')!.hidden = true;
+      this.capturing = null;
+    }
+
     if (name === 'lobby') {
-<<<<<<< Updated upstream
-      const code = this.net.createLobby();
-      const lobbyCodeEl = document.getElementById('lobby-code');
-      if (lobbyCodeEl) lobbyCodeEl.textContent = code;
-=======
       document.getElementById('start')!.hidden = !this.isHost;
       document.getElementById('role-set')!.hidden = !this.isHost;
       const statusEl = document.getElementById('lobby-status');
       if (statusEl) {
         statusEl.textContent = this.isHost ? 'Waiting for other player...' : 'Second player connected to lobby.';
       }
->>>>>>> Stashed changes
     }
 
     if (name === 'mapper') {
@@ -269,14 +399,9 @@ export class GameSession {
     if (name === 'explorer') {
       if (!this.state) this.startNewGame();
       GameView.renderExplorer(this.state, '#board-explorer');
+      document.querySelectorAll<HTMLElement>('.diag').forEach((b) => (b.hidden = !this.state.maze.ext));
       this.startTimer('#timer2');
     }
-  }
-
-  startNewGame() {
-    const size = this.settings.getMazeSize();
-    this.state = new GameState(size);
-    this.state.t0 = Date.now();
   }
 
   startTimer(timerSelector: string) {
@@ -294,8 +419,13 @@ export class GameSession {
     return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
   }
 
-  finish(result: 'win' | 'trap') {
+  finish(result: 'win' | 'trap', notifyNetwork = true) {
     if (this.state?.timerId) clearInterval(this.state.timerId);
+    
+    if (notifyNetwork && this.net.connected) {
+      this.net.send({ t: 'end', result });
+    }
+
     const titleEl = document.getElementById('result-title');
     const textEl = document.getElementById('result-text');
     const timeEl = document.getElementById('result-time');
@@ -310,6 +440,7 @@ export class GameSession {
   move(dir: Dir) {
     const res = this.state.moveExplorer(dir);
     if (!res) return;
+
     if (res === 'trap' || res === 'win') {
       this.finish(res);
     } else {
@@ -317,8 +448,6 @@ export class GameSession {
     }
   }
 
-<<<<<<< Updated upstream
-=======
   private initNetListeners() {
     this.net.onMessage = (m) => this.handleNetworkMessage(m);
     this.net.onClose = () => {
@@ -445,34 +574,55 @@ export class GameSession {
     };
   }
 
->>>>>>> Stashed changes
   initListeners() {
-    const startButton = document.getElementById('start');
-    startButton?.addEventListener('click', () => {
-      const levelInput = document.querySelector<HTMLInputElement>('input[name="level"]:checked')?.value ?? '5';
-      this.settings.difficulty = levelInput;
-      this.startNewGame();
 
-      const roleInput = document.querySelector<HTMLInputElement>('input[name="role"]:checked')?.value;
-      if (roleInput === 'mapper') {
-        this.show('mapper');
-      } else if (roleInput === 'explorer') {
-        this.show('explorer');
-      } else {
-        const role = Math.floor(Math.random() * 2);
-        this.show(role === 0 ? 'mapper' : 'explorer');
-      }
+    const codeEl = document.getElementById('lobby-code')!;
+    document.getElementById('create')?.addEventListener('click', () => {
+      this.isHost = true;
+      this.guestVote = undefined;
+      codeEl.textContent = '…';
+      this.net.host(
+        (code) => (codeEl.textContent = code),
+        () => {
+          this.guestVote = undefined;
+          this.show('lobby');
+        },
+      );
+      this.show('lobby');
     });
 
+    document.getElementById('join')?.addEventListener('click', () => {
+      const code = document.querySelector<HTMLInputElement>('#code')!.value.trim().toUpperCase();
+      if (!code) return;
+      this.isHost = false;
+      this.net.join(code, () => {
+        codeEl.textContent = code;
+        this.show('lobby');
+        this.sendVote();
+      });
+    });
+
+    document.querySelectorAll<HTMLInputElement>('input[name="level"]').forEach((r) =>
+      r.addEventListener('change', () => {
+        if (!this.isHost) this.sendVote();
+      }),
+    );
+
+    document.getElementById('start')?.addEventListener('click', () => this.startNewGame());
+
     document.getElementById('board-mapper')?.addEventListener('click', (e) => {
+      if (this.assignedRole !== 'mapper') return;
       const tile = (e.target as HTMLElement).closest<HTMLElement>('.tile');
       if (!tile) return;
       const r = tile.getBoundingClientRect();
       const turn = e.clientX < r.left + r.width / 2 ? -90 : 90;
       const idx = Number(tile.dataset.i);
+      
       const t = this.state.maze.tiles[idx];
       t.rotate(turn);
       GameView.renderMapper(this.state, '#board-mapper');
+
+      this.net.send({ t: 'rotation', i: idx, rotation: turn });
     });
 
     document.addEventListener('click', (e) => {
@@ -484,9 +634,19 @@ export class GameSession {
     });
 
     document.addEventListener('keydown', (e) => {
-      if (this.currentScreen !== 'explorer') return;
-      const map: Record<string, Dir> = { ArrowUp: 'N', w: 'N', ArrowRight: 'E', d: 'E', ArrowDown: 'S', s: 'S', ArrowLeft: 'W', a: 'W' };
-      const d = map[e.key];
+      if (this.capturing) {
+        if (['Shift', 'Control', 'Alt', 'Meta'].includes(e.key)) return;
+        e.preventDefault();
+        if (e.key !== 'Escape') this.bindKey(this.capturing, e.key.toLowerCase());
+        this.capturing = null;
+        this.drawKeys();
+        return;
+      }
+      if (!document.getElementById('keys-panel')!.hidden) return;
+      if (this.currentScreen !== 'explorer' || this.assignedRole !== 'explorer') return;
+      const arrows: Record<string, Dir> = { ArrowUp: 'N', ArrowRight: 'E', ArrowDown: 'S', ArrowLeft: 'W' };
+      const key = e.key.toLowerCase();
+      const d = arrows[e.key] ?? (Object.keys(this.keys) as Dir[]).find((k) => this.keys[k] === key);
       if (d) {
         e.preventDefault();
         this.move(d);

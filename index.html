@@ -11,21 +11,12 @@
       <!-- EKRAN: start -->
       <section class="screen" data-screen="home">
         <h1>Find-a-way</h1>
-<<<<<<< Updated upstream
-        <p class="lead">Jedna osoba widzi mapę, druga się po niej porusza.</p>
-        <button data-go="lobby">Utwórz lobby</button>
-=======
         <p class="lead">Two people: <br> One sees the map, the other moves through maze.</p>
         <button id="create">Create lobby</button>
->>>>>>> Stashed changes
         <div class="join">
           <label for="code">Lobby code</label>
           <input id="code" maxlength="8" autocomplete="off" />
-<<<<<<< Updated upstream
-          <button data-go="lobby">Dołącz</button>
-=======
           <button id="join">Join</button>
->>>>>>> Stashed changes
         </div>
       </section>
 
@@ -34,21 +25,6 @@
         <h2>Lobby</h2>
         <p>Lobby code:</p>
         <p class="code" id="lobby-code">K7QF</p>
-<<<<<<< Updated upstream
-        <p id="lobby-status" class="lead">Czekam na drugiego gracza…</p>
-        <fieldset>
-          <legend>Twoja rola</legend>
-          <label><input type="radio" name="role" value="mapper" checked /> Mapper</label>
-          <label><input type="radio" name="role" value="explorer" /> Eksplorer</label>
-          <label><input type="radio" name="role" value="random" /> Losowo</label>
-        </fieldset>
-        <fieldset>
-          <legend>Poziom</legend>
-          <label><input type="radio" name="level" value="5" checked /> Łatwy (5x5)</label>
-          <label><input type="radio" name="level" value="7" /> Średni (7x7)</label>
-          <label><input type="radio" name="level" value="9" /> Trudny (9x9)</label>
-          <label><input type="radio" name="level" value="random" /> Losowo</label>
-=======
         <p id="lobby-status" class="lead">Waiting for the second player…</p>
         <fieldset id="role-set">
           <legend >Roles</legend>
@@ -63,7 +39,6 @@
           <label><input type="radio" name="level" value="9" /> Hard (9x9)</label>
           <label><input type="radio" name="level" value="11" /> Expert (11x11)</label>
           <label><input type="radio" name="level" value="random" /> Random</label>
->>>>>>> Stashed changes
         </fieldset>
         <button id="start">Start</button>
       </section>
@@ -84,12 +59,6 @@
         </div>
         <div class="board" id="board-explorer"></div>
         <div class="dpad" aria-label="Sterowanie">
-<<<<<<< Updated upstream
-          <button data-move="N" aria-label="W górę">↑</button>
-          <button data-move="W" aria-label="W lewo">←</button>
-          <button data-move="S" aria-label="W dół">↓</button>
-          <button data-move="E" aria-label="W prawo">→</button>
-=======
           <button data-move="N" aria-label="W górę"><img src="arrows/nArrow.png" alt="up" id="upArrow"></button>
           <button data-move="W" aria-label="W lewo"><img src="arrows/nArrow.png" alt="left" id="leftArrow"></button>
           <button data-move="S" aria-label="W dół"><img src="arrows/nArrow.png" alt="down" id="downArrow"></button>
@@ -98,7 +67,6 @@
           <button class="diag" data-move="NE" aria-label="W prawo i w górę" hidden><img src="arrows/dArrow.png" alt="up-right" id="upRightArrow"></button>
           <button class="diag" data-move="SW" aria-label="W lewo i w dół" hidden><img src="arrows/dArrow.png" alt="down-left" id="downLeftArrow"></button>
           <button class="diag" data-move="SE" aria-label="W prawo i w dół" hidden><img src="arrows/dArrow.png" alt="down-right" id="downRightArrow"></button>
->>>>>>> Stashed changes
         </div>
       </section>
 
@@ -111,17 +79,6 @@
         <button data-go="home" class="secondary">Exit</button>
       </section>
     </main>
-
-    <!-- Pasek deweloperski: skakanie między ekranami. Usuń przed publikacją. -->
-    <nav class="dev" aria-label="Podgląd ekranów (tymczasowy)">
-      <button data-go="home">start</button>
-      <button data-go="lobby">lobby</button>
-      <button data-go="mapper">mapper</button>
-      <button data-go="explorer">eksplorer</button>
-      <button data-go="result">wynik</button>
-    </nav>
-
-    
 
     <script type="module" src="/src/main.ts"></script>
   </body>
