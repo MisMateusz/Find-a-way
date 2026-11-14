@@ -506,7 +506,7 @@ export class GameSession {
     document.getElementById('top')!.replaceChildren(
       ...rows.map((r) => {
         const li = document.createElement('li');
-        li.textContent = `${r.nickname} ${this.formatTime(r.completion_time)}`;
+        li.textContent = `${r.nick1} ${this.formatTime(r.completion_time)}`;
         return li;
       }),
     );
@@ -620,11 +620,11 @@ export class GameSession {
     });
 
     document.getElementById('save')?.addEventListener('click', async () => {
-      const nickname = document.querySelector<HTMLInputElement>('#nick')!.value.trim();
-      if (!nickname) return;
+      const nick1 = document.querySelector<HTMLInputElement>('#nick')!.value.trim();
+      if (!nick1) return;
       const box = document.getElementById('save-box')!;
       box.hidden = true;
-      const ok = await saveResult({ nickname, completion_time: this.lastMs, level_type: this.state.maze.size });
+      const ok = await saveResult({ nick1, nick2: nick1, completion_time: this.lastMs}, this.state.maze.size);
       if (!ok) {
         alert('Nie udało się zapisać wyniku.');
         box.hidden = false;
