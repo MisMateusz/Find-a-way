@@ -20,6 +20,12 @@
  npm install @supabase/supabase-js    
  ```
 
+ ## Baza danych
+ Dodana na potrzebę spełnienia wymagania projektu studenckiego.
+ Klucz „anonimowy” usługi Supabase w tym repozytorium jest z założenia publiczny.
+ Przechowywane w środku są jedynie podane przez użytkowników nazwy oraz czas przejścia, więc nie ma obaw do utracenia ważnych danych.
+ Dostęp jest ograniczony za pomocą mechanizmu Row Level Security (dostępne są tylko operacje wstawiania/odczytu).
+
 ## Przykłady użycia
 ### Połączenie
 * Widok lobby z perspektywy hosta.\
