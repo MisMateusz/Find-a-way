@@ -162,6 +162,10 @@ export class GameState {
   timerId: number = 0;
   secondPlayerNick?: string;
 
+  private state: {
+    secondPlayerNick?: string;
+  } = {};
+
   constructor(size: number, maze?: Labirynth) {
     this.maze = maze ?? LabirynthGenerator.generate(size);
     this.explorerPos = new Position(this.maze.startPos.x, this.maze.startPos.y);
