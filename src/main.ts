@@ -671,7 +671,10 @@ document.getElementById('join')?.addEventListener('click', (e) => {
         this.show('lobby');
         this.sendVote();
         
-        this.net.send({ t: 'player-join', nick: nickVal });
+        if (this.net.connected) {
+          this.net.send({ t: 'player-join', nick: nickVal });
+          console.log("Wysłano nick do hosta:", nickVal);
+        }
       });
     });
 
