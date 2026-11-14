@@ -1,10 +1,10 @@
 # Find-a-way
 
 ## Opis Projektu
- Aplikacja to prosta gra, która polega na przejściu labiryntu.
- W grze są dwie role.
- Mapper to osoba z dostępem do mapy. Jej zadaniem jest obracanie kafelków korytarzy i przykazywanie kierunków do wyjścia drugiej osobie.
- Eksplorer to osoba poruszająca się rycerzem. Niestety jako postać uwięziona w labiryncie masz ograniczony widok, pozwala jednak wykryć pułapki na drodze. 
+ Aplikacja to prosta gra, która polega na przejściu labiryntu.\
+ W grze są dwie role.\
+ Mapper to osoba z dostępem do mapy. Jej zadaniem jest obracanie kafelków korytarzy i przykazywanie kierunków do wyjścia drugiej osobie.\
+ Eksplorer to osoba poruszająca się rycerzem. Niestety jako postać uwięziona w labiryncie masz ograniczony widok, pozwala jednak wykryć pułapki na drodze. \
 
 ## Instalacja 
 
