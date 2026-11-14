@@ -160,12 +160,6 @@ export class GameState {
   explorerPos: Position;
   t0: number = 0;
   timerId: number = 0;
-  secondPlayerNick?: string;
-
-  private state: {
-    secondPlayerNick?: string;
-  } = {};
-
   constructor(size: number, maze?: Labirynth) {
     this.maze = maze ?? LabirynthGenerator.generate(size);
     this.explorerPos = new Position(this.maze.startPos.x, this.maze.startPos.y);
@@ -364,6 +358,7 @@ export class GameSession {
   isHost = false;
   assignedRole: 'mapper' | 'explorer' = 'explorer';
   guestVote?: string;
+  secondNick?: string;
   lastMs = 0;
   keys: Record<Dir, string> = loadKeys();
   capturing: Dir | null = null;
@@ -443,7 +438,7 @@ export class GameSession {
       const nick1 = document.querySelector<HTMLInputElement>('#nick')!.value.trim();
       if (!nick1) return;
 
-      const nick2 = this.state.secondPlayerNick || 'Guest'; 
+      const nick2 = this.secondNick || 'Guest'; 
 
       const box = document.getElementById('save-box')!;
       box.hidden = true;
@@ -518,7 +513,7 @@ export class GameSession {
 
       case 'player-join':
         console.log("Odebrano nick drugiego gracza:", m.nick);
-        this.state.secondPlayerNick = m.nick;
+        this.secondNick = m.nick;
         this.updateLobbyStatus();
         break;
       
@@ -647,11 +642,13 @@ export class GameSession {
 
       this.isHost = true;
       this.guestVote = undefined;
+      this.secondNick = undefined;
       codeEl.textContent = '…';
       this.net.host(
         (code) => (codeEl.textContent = code),
         () => {
           this.guestVote = undefined;
+          this.secondNick = undefined;
           this.show('lobby');
           this.updateLobbyStatus();
         },
