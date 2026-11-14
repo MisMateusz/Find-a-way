@@ -54,6 +54,11 @@ button {
   box-shadow: inset 3px 3px 0 var(--light), inset -3px -3px 0 var(--mortar);
   cursor: pointer;
 }
+#create {
+  display: block;
+  width: 100%;
+  box-sizing: border-box; 
+}
 button:active { box-shadow: inset -3px -3px 0 var(--light), inset 3px 3px 0 var(--mortar); }
 button.secondary { background: var(--mid); }
 

@@ -28,6 +28,7 @@ const asset = (path: string) => `${import.meta.env.BASE_URL}${path}`;
 type msg = 
 | { t: 'init', role: 'mapper' | 'explorer', maze: Labirynth } 
 | { t: 'rotation', i: number, rotation: number }
+| { t: 'player-join', nick: string }
 | { t: 'vote', level: string }
 | { t: 'end', result: 'win' | 'trap' };
 
@@ -159,6 +160,7 @@ export class GameState {
   explorerPos: Position;
   t0: number = 0;
   timerId: number = 0;
+  secondPlayerNick?: string;
 
   constructor(size: number, maze?: Labirynth) {
     this.maze = maze ?? LabirynthGenerator.generate(size);
@@ -180,9 +182,13 @@ export class GameState {
     return 'continue';
   }
 
+
+
   elapsedTime(): number {
     return Date.now() - this.t0;
   }
+
+
 }
 
 // Klasa LobbySetting
@@ -430,6 +436,25 @@ export class GameSession {
     return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
   }
 
+  async save() {
+      if (!this.isHost) return;
+      const nick1 = document.querySelector<HTMLInputElement>('#nick')!.value.trim();
+      if (!nick1) return;
+
+      const nick2 = this.state.secondPlayerNick || 'Guest'; 
+
+      const box = document.getElementById('save-box')!;
+      box.hidden = true;
+
+      const ok = await saveResult({ nick1, nick2, completion_time: this.lastMs}, this.state.maze.size);
+      if (!ok) {
+        alert('Nie udało się zapisać wyniku.');
+        box.hidden = false;
+        return;
+      }
+      this.loadTop();
+  }
+
   finish(result: 'win' | 'trap', notifyNetwork = true) {
     if (this.state?.timerId) clearInterval(this.state.timerId);
     
@@ -446,7 +471,7 @@ export class GameSession {
     if (timeEl) timeEl.textContent = this.formatTime(this.state.elapsedTime());
     
     this.lastMs = this.state.elapsedTime();
-    document.getElementById('save-box')!.hidden = !(this.isHost && result === 'win');
+    if(result==='win') this.save();
     this.loadTop();
     this.show('result');
   }
@@ -489,6 +514,12 @@ export class GameSession {
         }
         break;
 
+      case 'player-join':
+        // Host odbiera nick drugiego gracza
+        this.state.secondPlayerNick = m.nick;
+        this.updateLobbyStatus();
+        break;
+      
       case 'vote':
         this.guestVote = m.level;
         break;
@@ -506,7 +537,7 @@ export class GameSession {
     document.getElementById('top')!.replaceChildren(
       ...rows.map((r) => {
         const li = document.createElement('li');
-        li.textContent = `${r.nick1} ${this.formatTime(r.completion_time)}`;
+        li.textContent = `${r.nick1} & ${r.nick2} ${this.formatTime(r.completion_time)}`;
         return li;
       }),
     );
@@ -604,43 +635,44 @@ export class GameSession {
   initListeners() {
 
     const codeEl = document.getElementById('lobby-code')!;
-    document.getElementById('create')?.addEventListener('click', () => {
+    document.getElementById('create')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      const nick1 = document.querySelector<HTMLInputElement>('#nick')!.value.trim();
+      if (!nick1) {
+        alert('You need a nickname!');
+        return;
+      }
+
       this.isHost = true;
       this.guestVote = undefined;
       codeEl.textContent = '…';
       this.net.host(
         (code) => (codeEl.textContent = code),
         () => {
-        this.guestVote = undefined;
-        this.show('lobby');
-        this.updateLobbyStatus();
+          this.guestVote = undefined;
+          this.show('lobby');
+          this.updateLobbyStatus();
         },
       );
       this.show('lobby');
     });
 
-    document.getElementById('save')?.addEventListener('click', async () => {
-      const nick1 = document.querySelector<HTMLInputElement>('#nick')!.value.trim();
-      if (!nick1) return;
-      const box = document.getElementById('save-box')!;
-      box.hidden = true;
-      const ok = await saveResult({ nick1, nick2: nick1, completion_time: this.lastMs}, this.state.maze.size);
-      if (!ok) {
-        alert('Nie udało się zapisać wyniku.');
-        box.hidden = false;
+document.getElementById('join')?.addEventListener('click', () => {
+      const code = document.querySelector<HTMLInputElement>('#code')!.value.trim().toUpperCase();
+      const nickVal = document.querySelector<HTMLInputElement>('#nick')!.value.trim(); // Pobieramy nick z pola
+      
+      if (!code || !nickVal) {
+        alert('Wpisz kod lobby oraz swój nick!');
         return;
       }
-      this.loadTop();
-    });
-
-    document.getElementById('join')?.addEventListener('click', () => {
-      const code = document.querySelector<HTMLInputElement>('#code')!.value.trim().toUpperCase();
-      if (!code) return;
+      
       this.isHost = false;
       this.net.join(code, () => {
         codeEl.textContent = code;
         this.show('lobby');
         this.sendVote();
+        
+        this.net.send({ t: 'player-join', nick: nickVal });
       });
     });
 

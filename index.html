@@ -12,12 +12,19 @@
       <section class="screen" data-screen="home">
         <h1>Find-a-way</h1>
         <p class="lead">Two people: <br> One sees the map, the other moves through maze.</p>
-        <button id="create">Create lobby</button>
-        <div class="join">
-          <label for="code">Lobby code</label>
-          <input id="code" maxlength="8" autocomplete="off" />
-          <button id="join">Join</button>
-        </div>
+        <form>
+          <label for="nick">Your nickname:</label>
+          <input type="text" id="nick" maxlength= 10 autocomplete="off" required/>
+
+          <button  id="create">Create lobby</button>
+  
+          <div class="join">
+            <label for="code">Lobby code</label>
+            <input id="code" maxlength="8" autocomplete="off" />
+            <button id="join">Join</button>
+          </div>
+        </form>
+
       </section>
 
       <!-- EKRAN: lobby -->
@@ -78,9 +85,6 @@
         <button data-go="lobby">Play Again</button>
         <button data-go="home" class="secondary">Exit</button>
         <div id="save-box" class="join" hidden>
-        <label for="nick">Nick</label>
-        <input id="nick" maxlength="16" autocomplete="off" />
-        <button id="save">Zapisz wynik</button>
         </div>
         <p class="lead" id="top-title"></p>
         <ol id="top"></ol>
