@@ -662,7 +662,7 @@ document.getElementById('join')?.addEventListener('click', () => {
       const nickVal = document.querySelector<HTMLInputElement>('#nick')!.value.trim(); // Pobieramy nick z pola
       
       if (!code || !nickVal) {
-        alert('Wpisz kod lobby oraz swój nick!');
+        alert('Write a valid code and nickname!');
         return;
       }
       
