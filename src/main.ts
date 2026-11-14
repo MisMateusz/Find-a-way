@@ -472,7 +472,6 @@ export class GameSession {
     
     this.lastMs = this.state.elapsedTime();
     if(result==='win') this.save();
-    this.loadTop();
     this.show('result');
   }
 
@@ -657,7 +656,8 @@ export class GameSession {
       this.show('lobby');
     });
 
-document.getElementById('join')?.addEventListener('click', () => {
+document.getElementById('join')?.addEventListener('click', (e) => {
+      e.preventDefault();
       const code = document.querySelector<HTMLInputElement>('#code')!.value.trim().toUpperCase();
       const nickVal = document.querySelector<HTMLInputElement>('#nick')!.value.trim(); // Pobieramy nick z pola
       
