@@ -182,8 +182,6 @@ export class GameState {
     return 'continue';
   }
 
-
-
   elapsedTime(): number {
     return Date.now() - this.t0;
   }
@@ -472,6 +470,7 @@ export class GameSession {
     
     this.lastMs = this.state.elapsedTime();
     if(result==='win') this.save();
+    this.loadTop();
     this.show('result');
   }
 
@@ -514,7 +513,7 @@ export class GameSession {
         break;
 
       case 'player-join':
-        // Host odbiera nick drugiego gracza
+        console.log("Odebrano nick drugiego gracza:", m.nick);
         this.state.secondPlayerNick = m.nick;
         this.updateLobbyStatus();
         break;
