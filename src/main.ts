@@ -384,12 +384,8 @@ export class GameSession {
     }
 
     if (name === 'lobby') {
-      document.getElementById('start')!.hidden = !this.isHost;
       document.getElementById('role-set')!.hidden = !this.isHost;
-      const statusEl = document.getElementById('lobby-status');
-      if (statusEl) {
-        statusEl.textContent = this.isHost ? 'Waiting for other player...' : 'Second player connected to lobby.';
-      }
+      this.updateLobbyStatus();
     }
 
     if (name === 'mapper') {
@@ -404,6 +400,19 @@ export class GameSession {
       document.querySelectorAll<HTMLElement>('.diag').forEach((b) => (b.hidden = !this.state.maze.ext));
       this.startTimer('#timer2');
     }
+  }
+
+  updateLobbyStatus() {
+    const connected = this.net.connected;
+
+    const statusEl = document.getElementById('lobby-status');
+    if (statusEl) {
+      statusEl.textContent = !this.isHost || connected
+        ? 'Second player connected to lobby.'
+        : 'Waiting for other player...';
+    }
+
+    document.getElementById('start')!.hidden = !(this.isHost && connected);
   }
 
   startTimer(timerSelector: string) {
@@ -602,8 +611,9 @@ export class GameSession {
       this.net.host(
         (code) => (codeEl.textContent = code),
         () => {
-          this.guestVote = undefined;
-          this.show('lobby');
+        this.guestVote = undefined;
+        this.show('lobby');
+        this.updateLobbyStatus();
         },
       );
       this.show('lobby');
