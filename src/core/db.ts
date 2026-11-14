@@ -6,24 +6,22 @@ const supabase = createClient(
 );
 
 export type ResultRow = {
-  nickname: string;
+  nick1: string;
+  nick2: string;
   completion_time: number;
-  level_type: number;
 };
 
-export async function saveResult(row: ResultRow): Promise<boolean> {
-  const { error } = await supabase.from('results').insert(row);
+export async function saveResult(row: ResultRow, level: number): Promise<boolean> {
+  const { error } = await supabase.from('results'+level).insert(row);
   if (error) console.error(error);
   return !error;
 }
 
-export async function topResults(level: number, limit = 10): Promise<ResultRow[]> {
+export async function topResults(level: number): Promise<ResultRow[]> {
   const { data, error } = await supabase
-    .from('results')
-    .select('nickname, completion_time, level_type')
-    .eq('level_type', level)
+    .from('results'+level)
+    .select('nick1, nick2, completion_time')
     .order('completion_time', { ascending: true })
-    .limit(limit);
   if (error) {
     console.error(error);
     return [];
