@@ -23,23 +23,23 @@
 ## Przykłady użycia
 ### Połączenie
 * Widok lobby z perspektywy hosta.\
-![demo](docs/LobbyHostView.png) \
+![demo](docs/LobbyHostView.png) 
 * Widok lobby z perspektywy osoby dołączającej.
-Aby połączyć się z drugą osobą, osoba hostująca przekazuje kod pokoju drugiej osobie. Gdy druga osoba dołączy, host dostaje taką informacje.\
+Aby połączyć się z drugą osobą, osoba hostująca przekazuje kod pokoju drugiej osobie. Gdy druga osoba dołączy, host dostaje taką informacje.
 
 
 ### Widok Explorera
-![demo](docs/ExplorerView.png)\
+![demo](docs/ExplorerView.png)
 Jako eksplorer widzisz jedynie bloki wokół siebie. Czerwony wykrzyknik to pułapka, wejście w nią kończy się przegraną.
-Do poruszania można użyć strzałek, lub klawiszy literowych wsad. Jednak przy rozszerzonych typach zalecane jest użycie liter qweasdzc, jako że pozwala to dodatkowo przechodzenie po przekątnych. \
+Do poruszania można użyć strzałek, lub klawiszy literowych wsad. Jednak przy rozszerzonych typach zalecane jest użycie liter qweasdzc, jako że pozwala to dodatkowo przechodzenie po przekątnych. 
 
 ### Zmiana klawiszy ruchu
-![demo](docs/KeyMappingView.png)\
-Aby zmienić preferowane klawisze literowe do przejścia labirynu należy kliknąć przycisk "Klawisze". Pojawi się wtedy lista klawiszy. Aby zmienić wybrany klawisz ruchu trzeba kliknąć odpowiadającą mu obecnie litere, a następnie kliknąć preferowaną z klawiatury.\
+![demo](docs/KeyMappingView.png)
+Aby zmienić preferowane klawisze literowe do przejścia labirynu należy kliknąć przycisk "Klawisze". Pojawi się wtedy lista klawiszy. Aby zmienić wybrany klawisz ruchu trzeba kliknąć odpowiadającą mu obecnie litere, a następnie kliknąć preferowaną z klawiatury.
 
 ### Widok Mappera
-![demo](docs/MapperView.png)\
-Jako mapper widzisz całą mapę i aktualne ustawienie bloczków. Aby obrócić wybrany bloczek należy na niego kliknąć. Miejsce kliknięcia na bloczek ma znaczenie, klikając w prawą połowe obracasz w prawo, lewą strone w lewo. Żółta strzałka to wyjście do którego prowadzisz drugą osobe.\
+![demo](docs/MapperView.png)
+Jako mapper widzisz całą mapę i aktualne ustawienie bloczków. Aby obrócić wybrany bloczek należy na niego kliknąć. Miejsce kliknięcia na bloczek ma znaczenie, klikając w prawą połowe obracasz w prawo, lewą strone w lewo. Żółta strzałka to wyjście do którego prowadzisz drugą osobe.
 
 ## Licencja
 
