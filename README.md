@@ -23,7 +23,7 @@
 ## Przykłady użycia
 ### Połączenie
 * Widok lobby z perspektywy hosta.\
-![demo](docs/LobbyHostView.png) \
+![demo](docs/LobbyHostView.png) 
 * Widok lobby z perspektywy osoby dołączającej.
 Aby połączyć się z drugą osobą, osoba hostująca przekazuje kod pokoju drugiej osobie. Gdy druga osoba dołączy, host dostaje taką informacje.
 
