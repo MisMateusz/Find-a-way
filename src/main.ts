@@ -30,6 +30,7 @@ type msg =
 | { t: 'rotation', i: number, rotation: number }
 | { t: 'player-join', nick: string }
 | { t: 'vote', level: string }
+| {t: 'refresh_top'}
 | { t: 'end', result: 'win' | 'trap' };
 
 const ID_PREFIX = 'findaway-';
@@ -450,7 +451,6 @@ export class GameSession {
         ? 'Second player connected to lobby.'
         : 'Waiting for other player...';
     }
-
     document.getElementById('start')!.hidden = !(this.isHost && connected);
   }
 
@@ -485,7 +485,10 @@ export class GameSession {
         box.hidden = false;
         return;
       }
-      this.loadTop();
+      //this.loadTop();
+      if (this.net.connected) {
+          this.net.send({ t: 'refresh_top' }); 
+      }
   }
 
   finish(result: 'win' | 'trap', notifyNetwork = true) {
@@ -555,6 +558,10 @@ export class GameSession {
       
       case 'vote':
         this.guestVote = m.level;
+        break;
+        
+      case 'refresh_top':
+        this.loadTop();
         break;
 
       case 'end':
