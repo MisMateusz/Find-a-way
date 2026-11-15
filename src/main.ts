@@ -130,27 +130,63 @@ export class LabirynthGenerator {
     const maze = new Labirynth(size);
     const types = Object.keys(maze.ext ? TILE_EXT_DEFS : TILE_DEFS) as (TileType | TileTypeExt)[];
     const rnd = (n: number) => Math.floor(Math.random() * n);
-    do{
+
+    do {
       maze.startPos = new Position(rnd(size), rnd(size));
       maze.exitPos = new Position(rnd(size), rnd(size));
-    } while(Math.abs(maze.startPos.x-maze.exitPos.x)+Math.abs(maze.startPos.y-maze.exitPos.y)<1.5*(size-1));
-    
+    } while (
+      Math.abs(maze.startPos.x - maze.exitPos.x) +
+      Math.abs(maze.startPos.y - maze.exitPos.y) < 1.5 * (size - 1)
+    );
 
-    maze.tiles = Array.from({ length: size * size }, () => ({
-      type: types[rnd(types.length)],
-      rotation: 90 * rnd(4),
-      trap: false,
-    })).map(t => new Tile(t.type, t.rotation, t.trap));
-
-    for (let k = 0; k < (size * size) / 8; k++) {
-      const x = 1 + rnd(size - 2), y = rnd(size);
-      maze.at(x, y).trap = true;
-    }
+    maze.tiles = Array.from({ length: size * size }, () =>
+      new Tile(types[rnd(types.length)], 90 * rnd(4), false)
+    );
 
     maze.at(maze.startPos.x, maze.startPos.y).type = 'cross';
     maze.at(maze.exitPos.x, maze.exitPos.y).type = 'cross';
 
+    const target = Math.floor((size * size) / 8);
+    let placed = 0;
+    for (let attempt = 0; placed < target && attempt < target * 20; attempt++) {
+      const x = 1 + rnd(size - 2), y = rnd(size);
+      const tile = maze.at(x, y);
+
+      const isStart = x === maze.startPos.x && y === maze.startPos.y;
+      const isExit = x === maze.exitPos.x && y === maze.exitPos.y;
+      if (tile.trap || isStart || isExit) continue;
+
+      tile.trap = true;
+      if (LabirynthGenerator.hasPath(maze, size)) {
+        placed++;
+      } else {
+        tile.trap = false;
+      }
+    }
+
     return maze;
+  }
+
+  private static hasPath(maze: Labirynth, size: number): boolean {
+    const { startPos: s, exitPos: e } = maze;
+    const seen = new Set<number>([s.y * size + s.x]);
+    const queue: [number, number][] = [[s.x, s.y]];
+    const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+
+    for (let i = 0; i < queue.length; i++) {
+      const [x, y] = queue[i];
+      if (x === e.x && y === e.y) return true;
+
+      for (const [dx, dy] of dirs) {
+        const nx = x + dx, ny = y + dy;
+        if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
+        const id = ny * size + nx;
+        if (seen.has(id) || maze.at(nx, ny).trap) continue;
+        seen.add(id);
+        queue.push([nx, ny]);
+      }
+    }
+    return false;
   }
 }
 
