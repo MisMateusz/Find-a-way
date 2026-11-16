@@ -245,6 +245,7 @@ export class NetService {
     const abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     const code = Array.from({ length: 4 }, () => abc[Math.floor(Math.random() * abc.length)]).join('');
     const peer = (this.peer = new Peer(ID_PREFIX + code));
+    this.watch(peer);
     peer.on('open', () => onCode(code)); 
     peer.on('connection', (c) => {      
       if (this.conn) return c.close();   
@@ -257,6 +258,7 @@ export class NetService {
   join(code: string, onOpen: () => void) {
     this.close();
     const peer = (this.peer = new Peer());
+    this.watch(peer);
     peer.on('open', () => {
       const c = peer.connect(ID_PREFIX + code, { reliable: true, serialization: 'json' });
       this.attach(c);
@@ -271,6 +273,14 @@ export class NetService {
     c.on('close', () => {
       if (this.conn === c) { this.conn = undefined; this.onClose(); }
     });
+  }
+
+  private watch(peer: Peer) {
+    setTimeout(() => {
+      if (this.peer !== peer || peer.open) return;
+      this.close();
+      this.onError('PeerJS server not reachable');
+    }, 10000);
   }
  
   send(m: msg) { if (this.conn?.open) this.conn.send(m); }
