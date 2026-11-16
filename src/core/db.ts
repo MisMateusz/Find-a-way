@@ -22,6 +22,7 @@ export async function topResults(level: number): Promise<ResultRow[]> {
     .from('results'+level)
     .select('nick1, nick2, completion_time')
     .order('completion_time', { ascending: true })
+    .limit(10);
   if (error) {
     console.error(error);
     return [];

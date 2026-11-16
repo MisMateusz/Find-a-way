@@ -1,10 +1,10 @@
 # Find-a-way
 
 ## Opis Projektu
- Aplikacja to prosta gra, która polega na przejściu labiryntu.
- W grze są dwie role.
- Mapper to osoba z dostępem do mapy. Jej zadaniem jest obracanie kafelków korytarzy i przykazywanie kierunków do wyjścia drugiej osobie.
- Eksplorer to osoba poruszająca się rycerzem. Niestety jako postać uwięziona w labiryncie masz ograniczony widok, pozwala jednak wykryć pułapki na drodze. 
+ Aplikacja to prosta gra, która polega na przejściu labiryntu.\
+ W grze są dwie role.\
+ Mapper to osoba z dostępem do mapy. Jej zadaniem jest obracanie kafelków korytarzy i przykazywanie kierunków do wyjścia drugiej osobie.\
+ Eksplorer to osoba poruszająca się rycerzem. Niestety jako postać uwięziona w labiryncie masz ograniczony widok, pozwala jednak wykryć pułapki na drodze.
 
 ## Instalacja 
 
@@ -20,35 +20,38 @@
  npm install @supabase/supabase-js    
  ```
 
+ ## Baza danych
+ Dodana na potrzebę spełnienia wymagania projektu studenckiego. \
+ Klucz „anonimowy” usługi Supabase w tym repozytorium jest z założenia publiczny. \
+ Przechowywane w środku są jedynie podane przez użytkowników nazwy oraz czas przejścia, więc nie ma obaw do utracenia ważnych danych. \
+ Dostęp jest ograniczony za pomocą mechanizmu Row Level Security (dostępne są tylko operacje wstawiania/odczytu). 
+
 ## Przykłady użycia
 ### Połączenie
-* Widok lobby z perspektywy hosta.
+* Widok lobby z perspektywy hosta.\
 ![demo](docs/LobbyHostView.png) 
 * Widok lobby z perspektywy osoby dołączającej.
 Aby połączyć się z drugą osobą, osoba hostująca przekazuje kod pokoju drugiej osobie. Gdy druga osoba dołączy, host dostaje taką informacje.
 
 
 ### Widok Explorera
-![demo](docs/ExplorerView.png)
+![demo](docs/ExplorerView.png) \
 Jako eksplorer widzisz jedynie bloki wokół siebie. Czerwony wykrzyknik to pułapka, wejście w nią kończy się przegraną.
 Do poruszania można użyć strzałek, lub klawiszy literowych wsad. Jednak przy rozszerzonych typach zalecane jest użycie liter qweasdzc, jako że pozwala to dodatkowo przechodzenie po przekątnych. 
 
 ### Zmiana klawiszy ruchu
-![demo](docs/KeyMappingView.png)
+![demo](docs/KeyMappingView.png) \
 Aby zmienić preferowane klawisze literowe do przejścia labirynu należy kliknąć przycisk "Klawisze". Pojawi się wtedy lista klawiszy. Aby zmienić wybrany klawisz ruchu trzeba kliknąć odpowiadającą mu obecnie litere, a następnie kliknąć preferowaną z klawiatury.
 
 ### Widok Mappera
-![demo](docs/MapperView.png)
+![demo](docs/MapperView.png) \
 Jako mapper widzisz całą mapę i aktualne ustawienie bloczków. Aby obrócić wybrany bloczek należy na niego kliknąć. Miejsce kliknięcia na bloczek ma znaczenie, klikając w prawą połowe obracasz w prawo, lewą strone w lewo. Żółta strzałka to wyjście do którego prowadzisz drugą osobe.
-
-
-
 
 ## Licencja
 
 MIT
 
-Copyright <YEAR 2026> <COPYRIGHT HOLDER  Mateusz Miś oraz Wiktor Malec>
+Copyright 2026 Mateusz Miś, Wiktor Malec
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 

@@ -14,7 +14,7 @@ import {
 import { Peer, type DataConnection} from 'peerjs';
 import { saveResult, topResults } from './core/db';
 
-type Screen = 'home' | 'lobby' | 'mapper' | 'explorer' | 'result';
+type Screen = 'home' | 'lobby' | 'mapper' | 'explorer' | 'result' | 'leaderboard';
 type Mark = 'explorer' | 'warning' | 'exit';
 
 const MARK_IMG: Record<Mark, string> = {
@@ -143,9 +143,30 @@ export class LabirynthGenerator {
       trap: false,
     })).map(t => new Tile(t.type, t.rotation, t.trap));
 
-    for (let k = 0; k < (size * size) / 8; k++) {
-      const x = 1 + rnd(size - 2), y = rnd(size);
-      maze.at(x, y).trap = true;
+    const near = (p: Position) => {
+      const dx = Math.abs(p.x - maze.exitPos.x), dy = Math.abs(p.y - maze.exitPos.y);
+      return maze.ext ? Math.max(dx, dy) === 1 : dx + dy === 1;
+    };
+    const cells: Position[] = [];
+    for (let y = 0; y < size; y++) {
+      for (let x = 1; x < size - 1; x++) {
+        const onStart = x === maze.startPos.x && y === maze.startPos.y;
+        const onExit = x === maze.exitPos.x && y === maze.exitPos.y;
+        if (!onStart && !onExit) cells.push(new Position(x, y));
+      }
+    }
+    for (let i = cells.length - 1; i > 0; i--) {
+      const j = rnd(i + 1);
+      [cells[i], cells[j]] = [cells[j], cells[i]];
+    }
+    const wanted = Math.floor((size * size) / 8);
+    let placed = 0, nearExit = 0;
+    for (const p of cells) {
+      if (placed === wanted) break;
+      if (near(p) && nearExit === 3) continue;
+      maze.at(p.x, p.y).trap = true;
+      placed++;
+      if (near(p)) nearExit++;
     }
 
     maze.at(maze.startPos.x, maze.startPos.y).type = 'cross';
@@ -381,10 +402,15 @@ export class GameSession {
       if (this.state?.timerId) clearInterval(this.state.timerId);
     }
 
+    document.getElementById('app')!.classList.toggle('wide', name === 'leaderboard');
     document.getElementById('keys-btn')!.hidden = name !== 'explorer';
     if (name !== 'explorer') {
       document.getElementById('keys-panel')!.hidden = true;
       this.capturing = null;
+    }
+
+    if (name === 'leaderboard') {
+      this.loadLeaderboard();
     }
 
     if (name === 'lobby') {
@@ -536,11 +562,32 @@ export class GameSession {
     }
   }
 
-  async loadTop() {
-    const level = this.state.maze.size;
-    document.getElementById('top-title')!.textContent = `Top 10 (${level}x${level})`;
+  loadTop() {
+    return this.renderTop(this.state.maze.size, 'top', 'top-title');
+  }
+
+  loadLeaderboard() {
+    document.getElementById('leaderboard-title')!.textContent = 'Top 10 for each level';
+    if (!document.querySelector('.lb-row')) {
+      const row = document.createElement('div');
+      row.className = 'lb-row';
+      document.getElementById('leaderboard5')!.before(row);
+      for (const level of [5, 7, 9, 11]) {
+        const col = document.createElement('div');
+        const h = document.createElement('p');
+        h.className = 'lb-title';
+        h.textContent = `${level}x${level}`;
+        col.append(h, document.getElementById(`leaderboard${level}`)!);
+        row.append(col);
+      }
+    }
+    for (const level of [5, 7, 9, 11]) this.renderTop(level, `leaderboard${level}`);
+  }
+
+  async renderTop(level: number, listId: string, titleId?: string) {
+    if (titleId) document.getElementById(titleId)!.textContent = `Top 10 (${level}x${level})`;
     const rows = await topResults(level);
-    document.getElementById('top')!.replaceChildren(
+    document.getElementById(listId)!.replaceChildren(
       ...rows.map((r) => {
         const li = document.createElement('li');
         li.textContent = `${r.nick1} & ${r.nick2} ${this.formatTime(r.completion_time)}`;
@@ -665,7 +712,12 @@ export class GameSession {
       this.show('lobby');
     });
 
-document.getElementById('join')?.addEventListener('click', (e) => {
+    document.getElementById('leaderboard')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.show('leaderboard');
+    });
+
+    document.getElementById('join')?.addEventListener('click', (e) => {
       e.preventDefault();
       const code = document.querySelector<HTMLInputElement>('#code')!.value.trim().toUpperCase();
       const nickVal = document.querySelector<HTMLInputElement>('#nick')!.value.trim(); // Pobieramy nick z pola

@@ -23,6 +23,8 @@
             <input id="code" maxlength="8" autocomplete="off" />
             <button id="join">Join</button>
           </div>
+
+          <button id="leaderboard">Leaderboard</button>
         </form>
 
       </section>
@@ -89,6 +91,18 @@
         <p class="lead" id="top-title"></p>
         <ol id="top"></ol>
       </section>
+
+      <!-- EKRAN: tabela wyników -->
+      <section class="screen" data-screen="leaderboard" hidden>
+        <h2>Leaderboard</h2>
+        <p class="lead" id="leaderboard-title"></p>
+        <ol id="leaderboard5"></ol>
+        <ol id="leaderboard7"></ol>
+        <ol id="leaderboard9"></ol>
+        <ol id="leaderboard11"></ol>
+        <button data-go="home" class="secondary">Exit</button>
+      </section>
+
     </main>
 
     <script type="module" src="/src/main.ts"></script>
