@@ -57,7 +57,8 @@ button {
 #create {
   display: block;
   width: 100%;
-  box-sizing: border-box; 
+  box-sizing: border-box;
+  margin: 16px 0; 
 }
 button:active { box-shadow: inset -3px -3px 0 var(--light), inset 3px 3px 0 var(--mortar); }
 button.secondary { background: var(--mid); }
@@ -125,10 +126,22 @@ input[type='radio'] { accent-color: var(--exit); width: 18px; height: 18px; }
 .tile[data-mark='!']::after { color: var(--danger); }
 
 .dpad {
-  display: grid; gap: 8px; width: 100%;
-  grid-template-columns: repeat(4, 1fr);
+  display: grid; 
+  gap: 8px; 
+  width: 100%;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
 }
 .dpad button { font-size: 26px; padding: 14px 0; }
+.dpad button[data-move="NW"] { grid-area: 1 / 1; }
+.dpad button[data-move="N"]  { grid-area: 1 / 2; }
+.dpad button[data-move="NE"] { grid-area: 1 / 3; }
+.dpad button[data-move="W"]  { grid-area: 2 / 1; }
+.dpad button[data-move="E"]  { grid-area: 2 / 3; }
+.dpad button[data-move="SW"] { grid-area: 3 / 1; }
+.dpad button[data-move="S"]  { grid-area: 3 / 2; }
+.dpad button[data-move="SE"] { grid-area: 3 / 3; }
+
 
 .dev {
   position: fixed; left: 0; right: 0; bottom: 0;

@@ -68,13 +68,16 @@
         </div>
         <div class="board" id="board-explorer"></div>
         <div class="dpad" aria-label="Sterowanie">
-          <button data-move="N" aria-label="W górę"><img src="arrows/nArrow.png" alt="up" id="upArrow"></button>
-          <button data-move="W" aria-label="W lewo"><img src="arrows/nArrow.png" alt="left" id="leftArrow"></button>
-          <button data-move="S" aria-label="W dół"><img src="arrows/nArrow.png" alt="down" id="downArrow"></button>
-          <button data-move="E" aria-label="W prawo"><img src="arrows/nArrow.png" alt="right" id="rightArrow"></button>
+
           <button class="diag" data-move="NW" aria-label="W lewo i w górę" hidden><img src="arrows/dArrow.png" alt="up-left" id="upLeftArrow"></button>
+          <button data-move="N" aria-label="W górę"><img src="arrows/nArrow.png" alt="up" id="upArrow" class="arrow"></button>
           <button class="diag" data-move="NE" aria-label="W prawo i w górę" hidden><img src="arrows/dArrow.png" alt="up-right" id="upRightArrow"></button>
+          
+          <button data-move="W" aria-label="W lewo"><img src="arrows/nArrow.png" alt="left" id="leftArrow" class="arrow"></button>
+          <button data-move="E" aria-label="W prawo"><img src="arrows/nArrow.png" alt="right" id="rightArrow" class="arrow"></button>
+
           <button class="diag" data-move="SW" aria-label="W lewo i w dół" hidden><img src="arrows/dArrow.png" alt="down-left" id="downLeftArrow"></button>
+          <button data-move="S" aria-label="W dół"><img src="arrows/nArrow.png" alt="down" id="downArrow"></button>
           <button class="diag" data-move="SE" aria-label="W prawo i w dół" hidden><img src="arrows/dArrow.png" alt="down-right" id="downRightArrow"></button>
         </div>
       </section>
