@@ -482,7 +482,7 @@ export class GameSession {
 
       const ok = await saveResult({ nick1, nick2, completion_time: this.lastMs}, this.state.maze.size);
       if (!ok) {
-        alert('Nie udało się zapisać wyniku.');
+        alert('Error - file not saved.');
         box.hidden = false;
         return;
       }
@@ -594,17 +594,31 @@ export class GameSession {
     for (const level of [5, 7, 9, 11]) this.renderTop(level, `leaderboard${level}`);
   }
 
-  async renderTop(level: number, listId: string, titleId?: string) {
-    if (titleId) document.getElementById(titleId)!.textContent = `Top 10 (${level}x${level})`;
+async renderTop(level: number, listId: string, titleId?: string) {
+    if (titleId) {
+        document.getElementById(titleId)!.textContent = `Top 10 (${level}x${level})`;
+    }
+
     const rows = await topResults(level);
-    document.getElementById(listId)!.replaceChildren(
-      ...rows.map((r) => {
-        const li = document.createElement('li');
-        li.textContent = `${r.nick1} & ${r.nick2} ${this.formatTime(r.completion_time)}`;
-        return li;
-      }),
+
+    const list = document.getElementById(listId)!;
+
+    list.replaceChildren(
+        ...Array.from({ length: 10 }, (_, index) => {
+            const r = rows[index];
+            const li = document.createElement('li');
+
+            if (r) {
+                li.textContent = `${r.nick1} & ${r.nick2} ${this.formatTime(r.completion_time)}`;
+            } else {
+                li.textContent = `---`;
+                li.classList.add('empty');
+            }
+
+            return li;
+        })
     );
-  }
+}
 
   sendVote() {
     const level = document.querySelector<HTMLInputElement>('input[name="level"]:checked')?.value ?? '5';
@@ -645,14 +659,14 @@ export class GameSession {
   initKeyMap() {
     const btn = document.createElement('button');
     btn.id = 'keys-btn';
-    btn.textContent = 'Klawisze';
+    btn.textContent = 'Keybinds';
     const panel = document.createElement('div');
     panel.id = 'keys-panel';
     panel.hidden = true;
     document.body.append(btn, panel);
 
     const arrows: Record<Dir, string> = { N:'Up', NE: 'Up Right', E: 'Right', SE: 'Down Right', S: 'Down', SW: 'Down Left', W: 'Left', NW: 'Up Left' };
-    const fmt = (k: string) => (k === ' ' ? 'SPACJA' : k.toUpperCase());
+    const fmt = (k: string) => (k === ' ' ? 'SPACE' : k.toUpperCase());
 
     this.drawKeys = () => {
       const rows = (Object.keys(arrows) as Dir[]).map((d) => {
@@ -670,7 +684,7 @@ export class GameSession {
         return row;
       });
       const reset = document.createElement('button');
-      reset.textContent = 'Domyślne';
+      reset.textContent = 'Default';
       reset.onclick = () => {
         this.keys = { ...DEFAULT_KEYS };
         this.capturing = null;
@@ -678,9 +692,9 @@ export class GameSession {
         this.drawKeys();
       };
       const title = document.createElement('div');
-      title.textContent = 'Klawisze ruchu';
+      title.textContent = 'Keybinds';
       const close = document.createElement('button');
-      close.textContent = 'Zamknij';
+      close.textContent = 'Close';
       close.onclick = () => {
         panel.hidden = true;
         this.capturing = null;
