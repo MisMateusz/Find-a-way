@@ -12,7 +12,8 @@ import {
 } from './core/tiles';
 
 import { Peer, type DataConnection} from 'peerjs';
-import { saveResult, topResults } from './core/db';
+import type { RealtimeChannel } from '@supabase/supabase-js';
+import { saveResult, topResults, getClient, realtimeAllowed, countRealtimeGame } from './core/db';
 
 type Screen = 'home' | 'lobby' | 'mapper' | 'explorer' | 'result' | 'leaderboard';
 type Mark = 'explorer' | 'warning' | 'exit';
@@ -34,6 +35,10 @@ type msg =
 | { t: 'end', result: 'win' | 'trap' };
 
 const ID_PREFIX = 'findaway-';
+const PEER_TIMEOUT = 10000;
+const NO_BACKUP = 'Backup server is unavailable or paused for this month. Try another browser or network, or come back later.';
+
+type RtPacket = { k: 'hello' | 'welcome' | 'data'; gid: string; m?: msg };
 
 const KEYS_STORE = 'findaway-keys';
 const DEFAULT_KEYS: Record<Dir, string> = { N: 'w', NE: 'e', E: 'd', SE: 'c', S: 's', SW: 'z', W: 'a', NW: 'q' };
@@ -233,62 +238,214 @@ export class LobbySetting {
 export class NetService {
   onMessage: (msg: msg) => void = () => {};
   onClose: () => void = () => {};
-  onError: (err: any) => void = () => {};
+  onStatus: (text: string, isError?: boolean) => void = () => {};
 
   private peer?: Peer;
   private conn?: DataConnection;
+  private channel?: RealtimeChannel;
+  private role: 'host' | 'guest' = 'host';
+  private rtOpen = false;
+  private gid = '';
+  private session = 0;
+  private onGuestCb: () => void = () => {};
+  private onOpenCb: () => void = () => {};
 
-  get connected() { return !!this.conn?.open; }
+  get connected() { return !!this.conn?.open || this.rtOpen; }
+
+  private status(text: string, isError = false) { this.onStatus(text, isError); }
 
   host(onCode: (code: string) => void, onGuest: () => void) {
     this.close();
+    this.role = 'host';
+    this.onGuestCb = onGuest;
+    const sid = this.session;
     const abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     const code = Array.from({ length: 4 }, () => abc[Math.floor(Math.random() * abc.length)]).join('');
+    onCode(code);
+    this.status('Creating lobby...');
+
     const peer = (this.peer = new Peer(ID_PREFIX + code));
-    this.watch(peer);
-    peer.on('open', () => onCode(code)); 
-    peer.on('connection', (c) => {      
-      if (this.conn) return c.close();   
+    let settled = false;
+    const settle = (peerOk: boolean) => {
+      if (settled || sid !== this.session) return;
+      settled = true;
+      this.status(peerOk ? '' : 'Trying another server...');
+      this.listenRealtime(code, sid, !peerOk);
+    };
+    peer.on('open', () => settle(true));
+    peer.on('connection', (c) => {
+      if (this.connected) return c.close();
       this.attach(c);
-      c.on('open', onGuest);             
+      c.on('open', () => {
+        this.closeChannel();
+        onGuest();
+      });
     });
-    peer.on('error', (e) => (e.type === 'unavailable-id' ? this.host(onCode, onGuest) : this.onError(e.type)));
+    peer.on('error', (e) => {
+      if (sid !== this.session) return;
+      if (e.type === 'unavailable-id') return this.host(onCode, onGuest);
+      settle(false);
+    });
+    window.setTimeout(() => settle(false), PEER_TIMEOUT);
   }
 
   join(code: string, onOpen: () => void) {
     this.close();
+    this.role = 'guest';
+    this.onOpenCb = onOpen;
+    const sid = this.session;
+    this.status('Trying to connect...');
+
+    let fell = false;
+    const fallback = () => {
+      if (fell || sid !== this.session || this.connected) return;
+      fell = true;
+      this.closePeer();
+      this.status('Trying another server...');
+      this.joinRealtime(code, sid);
+    };
+    window.setTimeout(fallback, PEER_TIMEOUT);
+
     const peer = (this.peer = new Peer());
-    this.watch(peer);
     peer.on('open', () => {
       const c = peer.connect(ID_PREFIX + code, { reliable: true, serialization: 'json' });
       this.attach(c);
-      c.on('open', onOpen);
+      c.on('open', () => {
+        if (fell || sid !== this.session) return;
+        this.status('');
+        onOpen();
+      });
+      c.on('error', fallback);
     });
-    peer.on('error', (e) => this.onError(e.type)); 
+    peer.on('error', fallback);
   }
- 
+
+  private async listenRealtime(code: string, sid: number, required: boolean) {
+    const allowed = await realtimeAllowed();
+    if (sid !== this.session) return;
+    if (!allowed) {
+      if (required) this.fail(NO_BACKUP);
+      return;
+    }
+    this.subscribe(
+      code,
+      sid,
+      () => { if (required) this.status(''); },
+      (why) => { if (required) this.fail(`Could not reach the backup server (${why}).`); },
+    );
+  }
+
+  private async joinRealtime(code: string, sid: number) {
+    const allowed = await realtimeAllowed();
+    if (sid !== this.session) return;
+    if (!allowed) return this.fail(NO_BACKUP);
+    this.gid = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    this.subscribe(
+      code,
+      sid,
+      () => {
+        let tries = 0;
+        const hello = () => {
+          if (sid !== this.session || this.rtOpen) return;
+          if (tries++ >= 3) return this.fail('Lobby not found, or it is full.');
+          this.sendRt({ k: 'hello', gid: this.gid });
+          window.setTimeout(hello, 2000);
+        };
+        hello();
+      },
+      (why) => this.fail(`Could not reach the backup server (${why}).`),
+    );
+  }
+
+  private subscribe(code: string, sid: number, onReady: () => void, onFail: (why: string) => void) {
+    const ch = getClient().channel(`lobby-${code}`);
+    ch.on('broadcast', { event: 'msg' }, ({ payload }) => {
+      if (sid === this.session) this.onPacket(payload as RtPacket);
+    }).subscribe((status) => {
+      if (sid !== this.session) return;
+      if (status === 'SUBSCRIBED') onReady();
+      else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') onFail(status);
+      else if (status === 'CLOSED' && this.rtOpen) this.lost();
+    });
+    this.channel = ch;
+  }
+
+  private onPacket(p: RtPacket) {
+    if (this.role === 'host') {
+      if (p.k === 'hello') {
+        if (this.gid && this.gid !== p.gid) return;
+        this.gid = p.gid;
+        this.sendRt({ k: 'welcome', gid: p.gid });
+        if (!this.rtOpen && !this.conn?.open) {
+          this.rtOpen = true;
+          this.closePeer();
+          this.status('');
+          this.onGuestCb();
+        }
+      } else if (p.k === 'data' && this.rtOpen && p.gid === this.gid) {
+        this.onMessage(p.m!);
+      }
+      return;
+    }
+    if (p.k === 'welcome' && !this.rtOpen && p.gid === this.gid) {
+      this.rtOpen = true;
+      this.status('');
+      this.onOpenCb();
+    } else if (p.k === 'data' && this.rtOpen && p.gid === this.gid) {
+      this.onMessage(p.m!);
+    }
+  }
+
+  private sendRt(p: RtPacket) {
+    this.channel?.send({ type: 'broadcast', event: 'msg', payload: p });
+  }
+
   private attach(c: DataConnection) {
     this.conn = c;
     c.on('data', (d) => this.onMessage(d as msg));
     c.on('close', () => {
-      if (this.conn === c) { this.conn = undefined; this.onClose(); }
+      if (this.conn === c) this.lost();
     });
   }
 
-  private watch(peer: Peer) {
-    setTimeout(() => {
-      if (this.peer !== peer || peer.open) return;
-      this.close();
-      this.onError('PeerJS server not reachable');
-    }, 10000);
+  private lost() {
+    this.close();
+    this.onClose();
+    this.status('Connection lost.', true);
   }
- 
-  send(m: msg) { if (this.conn?.open) this.conn.send(m); }
- 
-  close() {
+
+  private fail(text: string) {
+    this.close();
+    this.onClose();
+    this.status(text, true);
+  }
+
+  send(m: msg) {
+    if (this.conn?.open) {
+      this.conn.send(m);
+    } else if (this.rtOpen) {
+      this.sendRt({ k: 'data', gid: this.gid, m });
+      if (m.t === 'init') countRealtimeGame();
+    }
+  }
+
+  private closePeer() {
     this.conn = undefined;
     this.peer?.destroy();
     this.peer = undefined;
+  }
+
+  private closeChannel() {
+    if (this.channel) getClient().removeChannel(this.channel);
+    this.channel = undefined;
+  }
+
+  close() {
+    this.session++;
+    this.rtOpen = false;
+    this.gid = '';
+    this.closePeer();
+    this.closeChannel();
   }
 }
 
@@ -413,6 +570,7 @@ export class GameSession {
     }
 
     document.getElementById('app')!.classList.toggle('wide', name === 'leaderboard');
+    if (name !== 'home' && name !== 'lobby') this.setInfo('');
     document.getElementById('keys-btn')!.hidden = name !== 'explorer';
     if (name !== 'explorer') {
       document.getElementById('keys-panel')!.hidden = true;
@@ -482,7 +640,7 @@ export class GameSession {
 
       const ok = await saveResult({ nick1, nick2, completion_time: this.lastMs}, this.state.maze.size);
       if (!ok) {
-        alert('Nie udało się zapisać wyniku.');
+        this.setInfo('Could not save the result.', true);
         box.hidden = false;
         return;
       }
@@ -527,13 +685,14 @@ export class GameSession {
 
   private initNetListeners() {
     this.net.onMessage = (m) => this.handleNetworkMessage(m);
-    this.net.onClose = () => {
-      alert('Połączenie zostało zerwane.');
-      this.show('home');
-    };
-    this.net.onError = (err) => {
-      alert(`Błąd połączenia: ${err}`);
-    };
+    this.net.onClose = () => this.show('home');
+    this.net.onStatus = (text, isError) => this.setInfo(text, isError);
+  }
+
+  setInfo(text: string, isError = false) {
+    const el = document.getElementById('info')!;
+    el.textContent = text;
+    el.classList.toggle('error', isError);
   }
 
   private handleNetworkMessage(m: msg) {
@@ -596,15 +755,25 @@ export class GameSession {
 
   async renderTop(level: number, listId: string, titleId?: string) {
     if (titleId) document.getElementById(titleId)!.textContent = `Top 10 (${level}x${level})`;
+
     const rows = await topResults(level);
+
     document.getElementById(listId)!.replaceChildren(
-      ...rows.map((r) => {
-        const li = document.createElement('li');
-        li.textContent = `${r.nick1} & ${r.nick2} ${this.formatTime(r.completion_time)}`;
-        return li;
-      }),
+        ...Array.from({ length: 10 }, (_, i) => {
+            const li = document.createElement('li');
+            const r = rows[i];
+
+            if (r) {
+                li.textContent = `${r.nick1} & ${r.nick2} ${this.formatTime(r.completion_time)}`;
+            } else {
+                li.textContent = `---`;
+                li.classList.add('empty');
+            }
+
+            return li;
+        })
     );
-  }
+}
 
   sendVote() {
     const level = document.querySelector<HTMLInputElement>('input[name="level"]:checked')?.value ?? '5';
@@ -645,14 +814,14 @@ export class GameSession {
   initKeyMap() {
     const btn = document.createElement('button');
     btn.id = 'keys-btn';
-    btn.textContent = 'Klawisze';
+    btn.textContent = 'Keybinds';
     const panel = document.createElement('div');
     panel.id = 'keys-panel';
     panel.hidden = true;
     document.body.append(btn, panel);
 
     const arrows: Record<Dir, string> = { N:'Up', NE: 'Up Right', E: 'Right', SE: 'Down Right', S: 'Down', SW: 'Down Left', W: 'Left', NW: 'Up Left' };
-    const fmt = (k: string) => (k === ' ' ? 'SPACJA' : k.toUpperCase());
+    const fmt = (k: string) => (k === ' ' ? 'SPACE' : k.toUpperCase());
 
     this.drawKeys = () => {
       const rows = (Object.keys(arrows) as Dir[]).map((d) => {
@@ -670,7 +839,7 @@ export class GameSession {
         return row;
       });
       const reset = document.createElement('button');
-      reset.textContent = 'Domyślne';
+      reset.textContent = 'Default';
       reset.onclick = () => {
         this.keys = { ...DEFAULT_KEYS };
         this.capturing = null;
@@ -678,9 +847,9 @@ export class GameSession {
         this.drawKeys();
       };
       const title = document.createElement('div');
-      title.textContent = 'Klawisze ruchu';
+      title.textContent = 'Keybinds';
       const close = document.createElement('button');
-      close.textContent = 'Zamknij';
+      close.textContent = 'Close';
       close.onclick = () => {
         panel.hidden = true;
         this.capturing = null;
@@ -702,7 +871,7 @@ export class GameSession {
       e.preventDefault();
       const nick1 = document.querySelector<HTMLInputElement>('#nick')!.value.trim();
       if (!nick1) {
-        alert('You need a nickname!');
+        this.setInfo('You need a nickname!', true);
         return;
       }
 
@@ -733,7 +902,7 @@ export class GameSession {
       const nickVal = document.querySelector<HTMLInputElement>('#nick')!.value.trim(); // Pobieramy nick z pola
       
       if (!code || !nickVal) {
-        alert('Write a valid code and nickname!');
+        this.setInfo('Write a valid code and nickname!', true);
         return;
       }
       
