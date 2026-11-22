@@ -18,11 +18,73 @@ import { saveResult, topResults, getClient, realtimeAllowed, countRealtimeGame }
 type Screen = 'home' | 'lobby' | 'mapper' | 'explorer' | 'result' | 'leaderboard' | 'privacy';
 type Mark = 'explorer' | 'warning' | 'exit';
 
+const SUPPORTED_LANGS = ['pl', 'en'] as const;
+type Lang = (typeof SUPPORTED_LANGS)[number];
+
+const cache: Partial<Record<Lang, Record<string, unknown>>> = {};
+let dict: Record<string, unknown> = {};
+
 const MARK_IMG: Record<Mark, string> = {
   explorer: 'marks/explorer.png',
   warning: 'marks/warning.png',
   exit: 'marks/exit.png',
 };
+
+function getByPath(obj: Record<string, unknown>, path: string): unknown {
+  return path.split('.').reduce<unknown>((acc, key) => {
+    if (acc && typeof acc === 'object' && key in acc) {
+      return (acc as Record<string, unknown>)[key];
+    }
+    return null;
+  }, obj);
+}
+
+function t(key: string, vars: Record<string, string | number> = {}): string {
+  const raw = getByPath(dict, key);
+  if (typeof raw !== 'string') return key;
+
+  let text = raw;
+  for (const [k, v] of Object.entries(vars)) {
+    text = text.split(`{${k}}`).join(String(v));
+  }
+  return text;
+}
+
+async function setLanguage(lang: string | null | undefined) {
+  const targetLang: Lang = SUPPORTED_LANGS.includes(lang as Lang) ? (lang as Lang) : 'pl';
+
+  try {
+    if (!cache[targetLang]) {
+     const res = await fetch(`${import.meta.env.BASE_URL}locales/${targetLang}.json`);
+      if (!res.ok) throw new Error(`Brak pliku: ${targetLang}.json`);
+      cache[targetLang] = (await res.json()) as Record<string, unknown>;
+    }
+
+    dict = cache[targetLang]!;
+    localStorage.setItem('lang', targetLang);
+    document.documentElement.lang = targetLang;
+
+    document.querySelectorAll<HTMLElement>('[data-lang]').forEach((btn) => {
+      btn.classList.toggle('is-active', btn.dataset.lang === targetLang);
+    });
+
+    document.querySelectorAll<HTMLElement>('[data-i18n]').forEach((el) => {
+      const key = el.dataset.i18n;
+      if (!key) return;
+      const val = getByPath(dict, key);
+      if (typeof val === 'string') el.textContent = val;
+    });
+
+    document.querySelectorAll<HTMLInputElement>('[data-i18n-placeholder]').forEach((el) => {
+      const key = el.dataset.i18nPlaceholder;
+      if (!key) return;
+      const val = getByPath(dict, key);
+      if (typeof val === 'string') el.placeholder = val;
+    });
+  } catch (err) {
+    console.error(err);
+  }
+}
 
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path}`;
 
@@ -319,7 +381,7 @@ export class NetService {
     const settle = (peerOk: boolean) => {
       if (settled || sid !== this.session) return;
       settled = true;
-      this.status(peerOk ? '' : 'Trying another server...');
+      this.status(peerOk ? '' : t('connection.tryingAnother'));
       this.listenRealtime(code, sid, !peerOk);
     };
     peer.on('open', () => settle(true));
@@ -349,14 +411,14 @@ export class NetService {
       this.joinRealtime(code, sid);
       return;
     }
-    this.status('Trying to connect...');
+    this.status(t('connection.trying'));
 
     let fell = false;
     const fallback = () => {
       if (fell || sid !== this.session || this.connected) return;
       fell = true;
       this.closePeer();
-      this.status('Trying another server...');
+      this.status(t('connection.tryingAnother'));
       this.joinRealtime(code, sid);
     };
     window.setTimeout(fallback, PEER_TIMEOUT);
@@ -402,7 +464,7 @@ export class NetService {
         let tries = 0;
         const hello = () => {
           if (sid !== this.session || this.rtOpen) return;
-          if (tries++ >= 3) return this.fail('Lobby not found, or it is full.');
+          if (tries++ >= 3) return this.fail(t('errors.notFound'));
           this.sendRt({ k: 'hello', gid: this.gid });
           window.setTimeout(hello, 2000);
         };
@@ -663,8 +725,8 @@ export class GameSession {
     const statusEl = document.getElementById('lobby-status');
     if (statusEl) {
       statusEl.textContent = !this.isHost || connected
-        ? 'Second player connected to lobby.'
-        : 'Waiting for other player...';
+        ? t('lobby.connected')
+        : t('lobby.waiting');
     }
 
     document.getElementById('start')!.hidden = !(this.isHost && connected);
@@ -697,7 +759,7 @@ export class GameSession {
 
       const ok = await saveResult({ nick1, nick2, completion_time: this.lastMs}, this.state.maze.size);
       if (!ok) {
-        this.setInfo('Could not save the result.', true);
+        this.setInfo(t('errors.saveFailed'), true);
         box.hidden = false;
         return;
       }
@@ -719,8 +781,8 @@ export class GameSession {
     const textEl = document.getElementById('result-text');
     const timeEl = document.getElementById('result-time');
     
-    if (titleEl) titleEl.textContent = result === 'win' ? 'Exit found' : 'Trap';
-    if (textEl) textEl.textContent = result === 'win' ? 'Successfully escaped the maze.' : 'The explorer fell into a trap.';
+    if (titleEl) titleEl.textContent = result === 'win' ? t('result.winTitle') : t('result.trapTitle');
+    if (textEl) textEl.textContent = result === 'win' ? t('result.winText') : t('result.trapText');
     if (timeEl) timeEl.textContent = this.formatTime(this.state.elapsedTime());
     
     this.lastMs = this.state.elapsedTime();
@@ -794,7 +856,7 @@ export class GameSession {
   }
 
   loadLeaderboard() {
-    document.getElementById('leaderboard-title')!.textContent = 'Top 10 for each level';
+    document.getElementById('leaderboard-title')!.textContent = t('leaderboard.subTitle');
     if (!document.querySelector('.lb-row')) {
       const row = document.createElement('div');
       row.className = 'lb-row';
@@ -923,12 +985,16 @@ export class GameSession {
 
   initListeners() {
 
+    document.querySelectorAll<HTMLElement>('[data-lang]').forEach((btn) => {
+      btn.addEventListener('click', () => setLanguage(btn.dataset.lang));
+    });
+
     const codeEl = document.getElementById('lobby-code')!;
     document.getElementById('create')?.addEventListener('click', (e) => {
       e.preventDefault();
       const nick1 = document.querySelector<HTMLInputElement>('#nick')!.value.trim();
       if (!nick1) {
-        this.setInfo('You need a nickname!', true);
+        this.setInfo(t('errors.needNick'), true);
         return;
       }
 
@@ -974,7 +1040,7 @@ export class GameSession {
       const nickVal = document.querySelector<HTMLInputElement>('#nick')!.value.trim(); // Pobieramy nick z pola
       
       if (!code || !nickVal) {
-        this.setInfo('Write a valid code and nickname!', true);
+        this.setInfo(t('errors.needCodeAndNick'), true);
         return;
       }
       
@@ -1042,5 +1108,7 @@ export class GameSession {
     });
   }
 }
-
+const saved = localStorage.getItem('lang');
+const browser = navigator.language.slice(0, 2).toLowerCase();
+setLanguage(saved || (SUPPORTED_LANGS.includes(browser as Lang) ? browser : 'pl'));
 new GameSession();

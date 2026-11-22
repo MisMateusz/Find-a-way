@@ -7,6 +7,7 @@
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
   </head>
   <body>
+    
     <main id="app">
       <!-- EKRAN: privacy  -->
       <section class="screen" data-screen="privacy" hidden>
@@ -24,54 +25,61 @@
           <button id="consent-deny" class="secondary">Deny</button>
         </div>
       </section>
+      <div class="lang-switcher" role="group" aria-label="Language switcher">
+        <button type="button" data-lang="pl">PL</button>
+        <button type="button" data-lang="en">EN</button>
+      </div>
       <!-- EKRAN: start -->
       <section class="screen" data-screen="home">
-        <h1>Find-a-way</h1>
-        <p class="lead">Two people: <br> One sees the map, the other moves through maze.</p>
+        <h1 data-i18n="home.title">Find-a-way</h1>
+        <p class = "lead">
+        <span data-i18n="home.about.part1">Two people: </span><br>
+        <span data-i18n="home.about.part2">One sees the map, the other moves through maze.</span>
+        </p>
         <form>
-          <label for="nick">Your nickname:</label>
+          <label for="nick" data-i18n="home.nick">Your nickname:</label>
           <input type="text" id="nick" maxlength= 10 autocomplete="off" required/>
 
-          <button  id="create">Create lobby</button>
+          <button  id="create" data-i18n="home.create">Create lobby</button>
   
           <div class="join">
-            <label for="code">Lobby code</label>
+            <label for="code" data-i18n="home.code">Lobby code</label>
             <input id="code" maxlength="8" autocomplete="off" />
-            <button id="join">Join</button>
+            <button id="join" data-i18n="home.join">Join</button>
           </div>
 
-          <button id="leaderboard">Leaderboard</button>
+          <button id="leaderboard" data-i18n="home.leaderboard">Leaderboard</button>
         </form>
 
       </section>
 
       <!-- EKRAN: lobby -->
       <section class="screen" data-screen="lobby" hidden>
-        <h2>Lobby</h2>
-        <p>Lobby code:</p>
+        <h2 data-i18n="lobby.title">Lobby</h2>
+        <p data-i18n="lobby.codeLabel">Lobby code:</p>
         <p class="code" id="lobby-code">K7QF</p>
-        <p id="lobby-status" class="lead">Waiting for the second player…</p>
+        <p id="lobby-status" class="lead" data-i18n="lobby.waiting">Waiting for the second player…</p>
         <fieldset id="role-set">
-          <legend >Roles</legend>
-          <label><input type="radio" name="role" value="mapper" /> Mapper</label>
-          <label><input type="radio" name="role" value="explorer" /> Explorer</label>
-          <label><input type="radio" name="role" value="random" /> Random</label>
+          <legend data-i18n="lobby.roles.legend">Roles</legend>
+          <label><input type="radio" name="role" value="mapper"  /><span data-i18n="lobby.roles.mapper"> Mapper</span></label>
+          <label><input type="radio" name="role" value="explorer" /><span data-i18n="lobby.roles.explorer">Explorer </span> </label>
+          <label><input type="radio" name="role" value="random" /><span data-i18n="lobby.roles.random"> Random </span> </label>
         </fieldset>
         <fieldset>
           <legend>Level</legend>
-          <label><input type="radio" name="level" value="5" /> Easy (5x5)</label>
-          <label><input type="radio" name="level" value="7" /> Medium (7x7)</label>
-          <label><input type="radio" name="level" value="9" /> Hard (9x9)</label>
-          <label><input type="radio" name="level" value="11" /> Expert (11x11)</label>
-          <label><input type="radio" name="level" value="random" /> Random</label>
+          <label><input type="radio" name="level" value="5" /><span data-i18n="lobby.level.easy"> Easy (5x5) </span> </label>
+          <label><input type="radio" name="level" value="7" /><span data-i18n="lobby.level.medium"> Medium (7x7) </span> </label>
+          <label><input type="radio" name="level" value="9" /><span data-i18n="lobby.level.hard"> Hard (9x9) </span> </label>
+          <label><input type="radio" name="level" value="11" /><span data-i18n="lobby.level.expert"> Expert (11x11) </span> </label>
+          <label><input type="radio" name="level" value="random" /><span data-i18n="lobby.level.random">Random</span> </label>
         </fieldset>
-        <button id="start">Start</button>
+        <button id="start" data-i18n="lobby.start">Start</button>
       </section>
 
       <!-- EKRAN: mapper -->
       <section class="screen" data-screen="mapper" hidden>
-        <h2>Mapper</h2>
-        <p class="lead">Tap the left half of a tile to rotate it left, the right half to rotate it right.</p>
+        <h2 data-i18n="mapper.title">Mapper</h2>
+        <p class="lead" data-i18n="mapper.description">Tap the left half of a tile to rotate it left, the right half to rotate it right.</p>
         <p class="time" id="timer1">00:00</p>
         <div class="board" id="board-mapper"></div>
       </section>
@@ -79,7 +87,7 @@
       <!-- EKRAN: explorer -->
       <section class="screen" data-screen="explorer" hidden>
         <div class="bar">
-          <h2>Explorer</h2>
+          <h2 data-i18n="explorer.title">Explorer</h2>
           <p class="time" id="timer2">00:00</p>
         </div>
         <div class="board" id="board-explorer"></div>
@@ -103,8 +111,8 @@
         <h2 id="result-title">Finish</h2>
         <p id="result-text" class="lead"></p>
         <p class="time" id="result-time">00:00</p>
-        <button data-go="lobby">Play Again</button>
-        <button data-go="home" class="secondary">Exit</button>
+        <button data-go="lobby" data-i18n="result.playAgain">Play Again</button>
+        <button data-go="home" class="secondary" data-i18n="result.exit">Exit</button>
         <div id="save-box" class="join" hidden>
         </div>
         <p class="lead" id="top-title"></p>
@@ -113,13 +121,13 @@
 
       <!-- EKRAN: tabela wyników -->
       <section class="screen" data-screen="leaderboard" hidden>
-        <h2>Leaderboard</h2>
+        <h2 data-i18n="leaderboard.title">Leaderboard</h2>
         <p class="lead" id="leaderboard-title"></p>
         <ol id="leaderboard5"></ol>
         <ol id="leaderboard7"></ol>
         <ol id="leaderboard9"></ol>
         <ol id="leaderboard11"></ol>
-        <button data-go="home" class="secondary">Exit</button>
+        <button data-go="home" class="secondary" data-i18n="leaderboard.exit">Exit</button>
       </section>
 
     </main>

@@ -1,0 +1,66 @@
+{
+  "home": {
+    "title": "Find-a-way",
+    "about": {
+        "part1": "Two people: ",
+        "part2": "One sees the map, the other moves through maze."
+    },
+    "nick": "Your nickname: ",
+    "create": "Create lobby",
+    "code": "Lobby code",
+    "join": "Join",
+    "leaderboard": "Leaderboard"
+  },
+  "lobby": {
+    "title": "Lobby",
+    "codeLabel": "Lobby code:",
+    "waiting": "Waiting for the second player…",
+    "connected": "Second player connected to lobby.",
+    "roles": {
+      "legend": "Roles",
+      "mapper": "Mapper",
+      "explorer": "Explorer",
+      "random": "Random"
+    },
+    "level": {
+      "legend": "Level",
+      "easy": "Easy (5x5)",
+      "medium": "Medium (7x7)",
+      "hard": "Hard (9x9)",
+      "expert": "Expert (11x11)",
+      "random": "Random"
+    },
+    "start": "Start"
+  },
+  "mapper": {
+    "title": "Mapper",
+    "description": "Tap the left half of a tile to rotate it left, the right half to rotate it right."
+  },
+  "explorer": {
+    "title": "Explorer"
+  },
+  "result": {
+    "playAgain": "Play again",
+    "exit": "Exit",
+    "winTitle": "Exit found",
+    "winText": "Successfully escaped the maze.",
+    "trapTitle": "Trap",
+    "trapText": "The explorer fell into a trap."
+  },
+  "leaderboard": {
+    "title": "Leaderboard",
+    "subTitle": "Top 10 for each level",
+    "exit": "Exit"
+  },
+  "errors": {
+    "needNick": "You need a nickname!",
+    "needCodeAndNick": "Write a valid code and nickname!",
+    "saveFailed": "Could not save the result.",
+    "connectionLost": "Connection lost.",
+    "notFound": "Lobby not found, or it is full."
+  },
+  "connection": {
+    "trying":"Trying to connect...",
+    "tryingAnother": "Trying another server..."
+  }
+}

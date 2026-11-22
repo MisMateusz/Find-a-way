@@ -1,0 +1,67 @@
+{
+  "home": {
+    "title": "Find-a-way",
+    "about": {
+        "part1": "Dwie osoby: ",
+        "part2": "Jedna widzi mape, a druga porusza sie po labiryncie"
+    },
+    "nick": "Twoja nazwa: ",
+    "create": "Stwórz pokój",
+    "code": "Kod pokoju",
+    "join": "Dołacz",
+    "leaderboard": "Tablica wyników"
+  },
+  "lobby": {
+    "title": "Poczekalnia",
+    "codeLabel": "Kod pokoju:",
+    "waiting": "Oczekiwanie na drugiego gracza…",
+    "connected": "Drugi gracz dołaczył do lobby.",
+    "roles": {
+      "legend": "Role",
+      "mapper": "Mapper",
+      "explorer": "Eksplorer",
+      "random": "Losowa"
+    },
+    "level": {
+      "legend": "Poziom",
+      "easy": "Łatwy (5x5)",
+      "medium": "Średni (7x7)",
+      "hard": "Trudny (9x9)",
+      "expert": "Ekspert (11x11)",
+      "random": "Losowy"
+    },
+    "start": "Start"
+  },
+    "mapper": {
+    "title": "Mapper",
+    "description": "Naciśnij lewa cześć bloczka, aby go obrócić w lewo, a prawa cześć żeby w prawo."
+  },
+  "explorer": {
+    "title": "Eksplorer"
+  },
+  "result": {
+    "title": "Koniec",
+    "playAgain": "Zagraj ponownie",
+    "exit": "Wyjście",
+    "winTitle": "Znaleziono wyjście",
+    "winText": "Udało sie uciec z labiryntu.",
+    "trapTitle": "Pułapka",
+    "trapText": "Eksplorer wpadł w pułapke."
+  },
+  "leaderboard": {
+    "title": "Tablica wyników",
+    "subTitle": "Top 10 dla każdego poziomu",
+    "exit": "Wyjście"
+  },
+  "errors": {
+    "needNick": "Wymagany nickname!",
+    "needCodeAndNick": "Wpisz poprawny kod oraz nickname!",
+    "saveFailed": "Nie udało sie zapisać wyniku.",
+    "connectionLost": "Utracone połaczenie.",
+    "notFound": "Nie udało sie znaleźć pokoju, albo jest pełny."
+  },
+    "connection": {
+    "trying":"Próba połaczenia z serwerem...",
+    "tryingAnother": "Próba połaczenia z innym serwerem..."
+  }
+}
