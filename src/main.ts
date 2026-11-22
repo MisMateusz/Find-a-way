@@ -15,7 +15,7 @@ import { Peer, type DataConnection} from 'peerjs';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { saveResult, topResults, getClient, realtimeAllowed, countRealtimeGame } from './core/db';
 
-type Screen = 'home' | 'lobby' | 'mapper' | 'explorer' | 'result' | 'leaderboard' | 'privacy';
+type Screen = 'home' | 'lobby' | 'mapper' | 'explorer' | 'result' | 'leaderboard' | 'privacy' | 'settings' | 'howtoplay';
 type Mark = 'explorer' | 'warning' | 'exit';
 
 const SUPPORTED_LANGS = ['pl', 'en'] as const;
@@ -661,6 +661,8 @@ export class GameSession {
   net = new NetService();
   state!: GameState;
   currentScreen: Screen = 'home';
+  previousScreen: Screen = 'home';
+  overlayReturn: Screen = 'home';
   isHost = false;
   assignedRole: 'mapper' | 'explorer' = 'explorer';
   guestVote?: string;
@@ -680,9 +682,23 @@ export class GameSession {
   }
 
   show(name: Screen) {
-   this.currentScreen = name;
+    const isOverlay = name === 'settings' || name === 'howtoplay';
+    const wasOverlay =
+    this.currentScreen === 'settings' ||
+    this.currentScreen === 'howtoplay' ;
 
+    if (!isOverlay && !wasOverlay && this.currentScreen !== name) {
+      this.previousScreen = this.currentScreen;
+    }
+    if (isOverlay && !wasOverlay) {
+      this.overlayReturn = this.currentScreen;
+    }
+
+    this.currentScreen = name;
+    
     document.querySelectorAll<HTMLElement>('.screen').forEach((s) => (s.hidden = s.dataset.screen !== name));
+    const topBar = document.querySelector<HTMLElement>('.top-bar');
+    if (topBar) topBar.hidden = name === 'privacy';
 
     if (name !== 'explorer' && name !== 'mapper') {
       if (this.state?.timerId) clearInterval(this.state.timerId);
@@ -690,7 +706,10 @@ export class GameSession {
 
     document.getElementById('app')!.classList.toggle('wide', name === 'leaderboard');
     if (name !== 'home' && name !== 'lobby') this.setInfo('');
-    document.getElementById('keys-btn')!.hidden = name !== 'explorer';
+    if (name !== 'settings') {
+      document.getElementById('keys-panel')!.hidden = true;
+        this.capturing = null;
+    }
     if (name !== 'explorer') {
       document.getElementById('keys-panel')!.hidden = true;
       this.capturing = null;
@@ -804,7 +823,10 @@ export class GameSession {
 
   private initNetListeners() {
     this.net.onMessage = (m) => this.handleNetworkMessage(m);
-    this.net.onClose = () => this.show('home');
+    this.net.onClose = () => {
+      if (this.currentScreen === 'settings' || this.currentScreen === 'howtoplay') return;
+      this.show('home');
+    };
     this.net.onStatus = (text, isError) => this.setInfo(text, isError);
   }
 
@@ -932,14 +954,13 @@ export class GameSession {
   }
 
   initKeyMap() {
-    const btn = document.createElement('button');
-    btn.id = 'keys-btn';
+    const btn = document.getElementById('keys-btn')!;
     const panel = document.createElement('div');
     panel.id = 'keys-panel';
     panel.hidden = true;
-    document.body.append(btn, panel);
+    document.body.append(panel);
 
-    const arrows: Record<Dir, string> = { N:'Up', NE: 'Up Right', E: 'Right', SE: 'Down Right', S: 'Down', SW: 'Down Left', W: 'Left', NW: 'Up Left' };
+    const arrows: Record<Dir, string> = { N:'up', NE: 'upRight', E: 'right', SE: 'downRight', S: 'down', SW: 'downLeft', W: 'left', NW: 'upLeft'};
     const fmt = (k: string) => (k === ' ' ? 'SPACE' : k.toUpperCase());
 
     this.drawKeys = () => {
@@ -949,6 +970,7 @@ export class GameSession {
         const name = document.createElement('span');
         name.textContent = arrows[d];
         const b = document.createElement('button');
+        name.textContent = t(`settings.keys.${arrows[d]}`);
         b.textContent = this.capturing === d ? '…' : fmt(this.keys[d]);
         b.onclick = () => {
           this.capturing = d;
@@ -958,7 +980,7 @@ export class GameSession {
         return row;
       });
       const reset = document.createElement('button');
-      reset.textContent = 'Default';
+      reset.textContent = t('settings.keys.default');
       reset.onclick = () => {
         this.keys = { ...DEFAULT_KEYS };
         this.capturing = null;
@@ -966,9 +988,9 @@ export class GameSession {
         this.drawKeys();
       };
       const title = document.createElement('div');
-      title.textContent = 'Keybinds';
+      title.textContent = t('settings.keys.title');
       const close = document.createElement('button');
-      close.textContent = 'Close';
+      close.textContent = t('settings.keys.saveClose');
       close.onclick = () => {
         panel.hidden = true;
         this.capturing = null;
@@ -987,6 +1009,28 @@ export class GameSession {
 
     document.querySelectorAll<HTMLElement>('[data-lang]').forEach((btn) => {
       btn.addEventListener('click', () => setLanguage(btn.dataset.lang));
+    });
+
+    document.getElementById('open-settings')?.addEventListener('click', () => {
+      this.show('settings');
+    });
+
+    document.getElementById('open-info')?.addEventListener('click', () => {
+      this.show('howtoplay');
+    });
+
+    document.getElementById('howtoplay-back')?.addEventListener('click', () => {
+      this.show(this.overlayReturn);
+    });
+
+    document.getElementById('chprivacy')?.addEventListener('click', () => {
+      this.show('privacy');
+    });
+
+    document.querySelector('[data-screen="settings"] [data-go]')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation(); 
+      this.show(this.overlayReturn);
     });
 
     const codeEl = document.getElementById('lobby-code')!;
@@ -1026,7 +1070,7 @@ export class GameSession {
       this.consent = null;
       saveConsent(null);
       this.net.close();
-      this.setInfo('You chose not to continue. Pick an option to play.');
+      this.setInfo(t('errors.privacy'));
     });
 
     document.getElementById('leaderboard')?.addEventListener('click', (e) => {
@@ -1096,6 +1140,24 @@ export class GameSession {
         this.drawKeys();
         return;
       }
+
+      if (e.key === 'Escape') {
+        const keysPanel = document.getElementById('keys-panel');
+        if (keysPanel && !keysPanel.hidden) {
+          e.preventDefault();
+          keysPanel.hidden = true;
+          this.capturing = null;
+          this.drawKeys();
+          return;
+        }
+
+        if (this.currentScreen !== 'settings' && this.currentScreen !== 'privacy') {
+          e.preventDefault();
+          this.show('settings');
+          return;
+        }
+      }
+      
       if (!document.getElementById('keys-panel')!.hidden) return;
       if (this.currentScreen !== 'explorer' || this.assignedRole !== 'explorer') return;
       const arrows: Record<string, Dir> = { ArrowUp: 'N', ArrowRight: 'E', ArrowDown: 'S', ArrowLeft: 'W' };
@@ -1108,7 +1170,5 @@ export class GameSession {
     });
   }
 }
-const saved = localStorage.getItem('lang');
-const browser = navigator.language.slice(0, 2).toLowerCase();
-setLanguage(saved || (SUPPORTED_LANGS.includes(browser as Lang) ? browser : 'pl'));
+setLanguage(localStorage.getItem('lang') ?? 'en');
 new GameSession();
