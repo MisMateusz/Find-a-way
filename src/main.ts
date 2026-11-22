@@ -15,7 +15,7 @@ import { Peer, type DataConnection} from 'peerjs';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { saveResult, topResults, getClient, realtimeAllowed, countRealtimeGame } from './core/db';
 
-type Screen = 'home' | 'lobby' | 'mapper' | 'explorer' | 'result' | 'leaderboard';
+type Screen = 'home' | 'lobby' | 'mapper' | 'explorer' | 'result' | 'leaderboard' | 'privacy';
 type Mark = 'explorer' | 'warning' | 'exit';
 
 const MARK_IMG: Record<Mark, string> = {
@@ -56,6 +56,51 @@ const saveKeys = (keys: Record<Dir, string>) => {
     localStorage.setItem(KEYS_STORE, JSON.stringify(keys));
   } catch {}
 };
+
+const CONSENT_STORE = 'findaway-consent';
+
+const loadConsent = (): 'direct' | 'relay' | null => {
+  try {
+    const v = localStorage.getItem(CONSENT_STORE);
+    return v === 'direct' || v === 'relay' ? v : null;
+  } catch {
+    return null;
+  }
+};
+
+const saveConsent = (v: 'direct' | 'relay' | null) => {
+  try {
+    if (v) localStorage.setItem(CONSENT_STORE, v);
+    else localStorage.removeItem(CONSENT_STORE);
+  } catch {}
+};
+
+const KNOWN_TILES = [...Object.keys(TILE_DEFS), ...Object.keys(TILE_EXT_DEFS)];
+
+export function validMessage(m: msg, isHost: boolean, sender: 'mapper' | 'explorer', tileCount: number): boolean {
+  switch (m.t) {
+    case 'init': {
+      const d = m.maze;
+      const n = d?.size;
+      const inside = (p: Position) => Number.isInteger(p?.x) && Number.isInteger(p?.y) && p.x >= 0 && p.y >= 0 && p.x < n && p.y < n;
+      const tileOk = (t: Tile) => KNOWN_TILES.includes(t?.type) && [0, 90, 180, 270].includes(t.rotation);
+      return !isHost && [5, 7, 9, 11].includes(n) && Array.isArray(d.tiles) && d.tiles.length === n * n
+        && d.tiles.every(tileOk) && inside(d.startPos) && inside(d.exitPos);
+    }
+    case 'rotation':
+      return sender === 'mapper' && Number.isInteger(m.i) && m.i >= 0 && m.i < tileCount && (m.rotation === 90 || m.rotation === -90);
+    case 'end':
+      return sender === 'explorer' && (m.result === 'win' || m.result === 'trap');
+    case 'vote':
+      return isHost && ['5', '7', '9', '11', 'random'].includes(m.level);
+    case 'player-join':
+      return isHost && typeof m.nick === 'string';
+    case 'refresh_top':
+      return !isHost;
+    default:
+      return false;
+  }
+}
 
 // Klasa Position
 export class Position {
@@ -249,6 +294,7 @@ export class NetService {
   private session = 0;
   private onGuestCb: () => void = () => {};
   private onOpenCb: () => void = () => {};
+  relayOnly = false;
 
   get connected() { return !!this.conn?.open || this.rtOpen; }
 
@@ -260,9 +306,13 @@ export class NetService {
     this.onGuestCb = onGuest;
     const sid = this.session;
     const abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    const code = Array.from({ length: 4 }, () => abc[Math.floor(Math.random() * abc.length)]).join('');
+    const code = Array.from({ length: 6 }, () => abc[Math.floor(Math.random() * abc.length)]).join('');
     onCode(code);
     this.status('Creating lobby...');
+    if (this.relayOnly) {
+      this.listenRealtime(code, sid, true);
+      return;
+    }
 
     const peer = (this.peer = new Peer(ID_PREFIX + code));
     let settled = false;
@@ -294,6 +344,11 @@ export class NetService {
     this.role = 'guest';
     this.onOpenCb = onOpen;
     const sid = this.session;
+    if (this.relayOnly) {
+      this.status('Connecting through the server...');
+      this.joinRealtime(code, sid);
+      return;
+    }
     this.status('Trying to connect...');
 
     let fell = false;
@@ -550,6 +605,7 @@ export class GameSession {
   secondNick?: string;
   lastMs = 0;
   keys: Record<Dir, string> = loadKeys();
+  consent = loadConsent();
   capturing: Dir | null = null;
   drawKeys = () => {};
 
@@ -557,7 +613,8 @@ export class GameSession {
     this.initNetListeners();
     this.initListeners();
     this.initKeyMap();
-    this.show('home');
+    this.net.relayOnly = this.consent === 'relay';
+    this.show(this.consent ? 'home' : 'privacy');
   }
 
   show(name: Screen) {
@@ -696,6 +753,8 @@ export class GameSession {
   }
 
   private handleNetworkMessage(m: msg) {
+    const sender = this.assignedRole === 'mapper' ? 'explorer' : 'mapper';
+    if (!validMessage(m, this.isHost, sender, this.state?.maze.tiles.length ?? 0)) return;
     switch (m.t) {
       case 'init':
         this.assignedRole = m.role;
@@ -712,7 +771,6 @@ export class GameSession {
         break;
 
       case 'player-join':
-        console.log("Odebrano nick drugiego gracza:", m.nick);
         this.secondNick = m.nick;
         this.updateLobbyStatus();
         break;
@@ -773,7 +831,7 @@ export class GameSession {
             return li;
         })
     );
-}
+  }
 
   sendVote() {
     const level = document.querySelector<HTMLInputElement>('input[name="level"]:checked')?.value ?? '5';
@@ -814,7 +872,6 @@ export class GameSession {
   initKeyMap() {
     const btn = document.createElement('button');
     btn.id = 'keys-btn';
-    btn.textContent = 'Keybinds';
     const panel = document.createElement('div');
     panel.id = 'keys-panel';
     panel.hidden = true;
@@ -891,6 +948,21 @@ export class GameSession {
       this.show('lobby');
     });
 
+    const choose = (mode: 'direct' | 'relay') => {
+      this.consent = mode;
+      this.net.relayOnly = mode === 'relay';
+      saveConsent(mode);
+      this.show('home');
+    };
+    document.getElementById('consent-direct')?.addEventListener('click', () => choose('direct'));
+    document.getElementById('consent-relay')?.addEventListener('click', () => choose('relay'));
+    document.getElementById('consent-deny')?.addEventListener('click', () => {
+      this.consent = null;
+      saveConsent(null);
+      this.net.close();
+      this.setInfo('You chose not to continue. Pick an option to play.');
+    });
+
     document.getElementById('leaderboard')?.addEventListener('click', (e) => {
       e.preventDefault();
       this.show('leaderboard');
@@ -914,7 +986,6 @@ export class GameSession {
         
         if (this.net.connected) {
           this.net.send({ t: 'player-join', nick: nickVal });
-          console.log("Wysłano nick do hosta:", nickVal);
         }
       });
     });

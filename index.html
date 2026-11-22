@@ -8,6 +8,22 @@
   </head>
   <body>
     <main id="app">
+      <!-- EKRAN: privacy  -->
+      <section class="screen" data-screen="privacy" hidden>
+        <h2>Privacy notice</h2>
+        <ul id="privacy-text">
+          <li>With a direct connection, the other player can see your IP address.</li>
+          <li>Servers involved: PeerJS (sees your IP and the lobby code), Supabase (public leaderboard with nicknames and times, and the secure connection) and GitHub Pages (hosting).</li>
+          <li>The secure connection sends game messages through the Supabase server, so the other player does not see your IP address. However, this way has set maximum games per month.</li>
+          <li>Do not use your real name as a nickname.</li>
+          <li>Do not share your code to random players.</li>
+        </ul>
+        <div id="privacy-actions">
+          <button id="consent-direct">Accept</button>
+          <button id="consent-relay">Deny, use secure connection</button>
+          <button id="consent-deny" class="secondary">Deny</button>
+        </div>
+      </section>
       <!-- EKRAN: start -->
       <section class="screen" data-screen="home">
         <h1>Find-a-way</h1>
