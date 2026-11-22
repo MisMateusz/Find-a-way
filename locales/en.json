@@ -52,12 +52,36 @@
     "subTitle": "Top 10 for each level",
     "exit": "Exit"
   },
+  "howtoplay": {
+    "title": "How to play",
+    "back": "Exit"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "keys": {
+      "title": "Keybinds",
+      "up": "Up",
+      "upRight": "Up Right",
+      "right": "Right",
+      "downRight": "Down Right",
+      "down": "Down",
+      "downLeft": "Down Left",
+      "left": "Left",
+      "upLeft": "Up Left",
+      "default": "Default",
+      "saveClose": "Save & Close"
+    },
+    "privacy": "Change privacy settings",
+    "back": "Save & exit"
+  },
   "errors": {
     "needNick": "You need a nickname!",
     "needCodeAndNick": "Write a valid code and nickname!",
     "saveFailed": "Could not save the result.",
     "connectionLost": "Connection lost.",
-    "notFound": "Lobby not found, or it is full."
+    "notFound": "Lobby not found, or it is full.",
+    "privacy": "You chose not to continue. Pick an option to play."
   },
   "connection": {
     "trying":"Trying to connect...",

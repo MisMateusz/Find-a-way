@@ -53,12 +53,36 @@
     "subTitle": "Top 10 dla każdego poziomu",
     "exit": "Wyjście"
   },
+  "howtoplay": {
+    "title": "Jak grać",
+    "back": "Wyjdź"
+  },
+    "settings": {
+    "title": "Ustawienia",
+    "language": "Jezyk",
+    "keys": {
+      "title": "Mapuj przyciski",
+      "up": "Góra",
+      "upRight": "Prawo Góra",
+      "right": "Prawo",
+      "downRight": "Prawo Dół",
+      "down": "Dół",
+      "downLeft": "Lewo Dół",
+      "left": "Lewo",
+      "upLeft": "Lewo Góra",
+      "default": "Domyślne",
+      "saveClose": "Zapisz i wyjdź"
+    },
+    "privacy": "Zmień ustawienia prywatności",
+    "back": "Zapisz i wyjdź"
+  },
   "errors": {
     "needNick": "Wymagany nickname!",
     "needCodeAndNick": "Wpisz poprawny kod oraz nickname!",
     "saveFailed": "Nie udało sie zapisać wyniku.",
     "connectionLost": "Utracone połaczenie.",
-    "notFound": "Nie udało sie znaleźć pokoju, albo jest pełny."
+    "notFound": "Nie udało sie znaleźć pokoju, albo jest pełny.",
+    "privacy": "Ups, z ta opcja nie korzystać z naszego serwisu, wybierz inna aby kontynuować"
   },
     "connection": {
     "trying":"Próba połaczenia z serwerem...",

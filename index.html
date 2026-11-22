@@ -5,43 +5,86 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Find-a-way</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <style>
+      .top-bar {
+        position: fixed;
+        top: max(0.5rem, env(safe-area-inset-top));
+        right: max(0.5rem, env(safe-area-inset-right));
+        display: flex;
+        gap: 0.35rem;
+        z-index: 20;
+      }
+
+      .icon-btn {
+        width: 2rem;
+        height: 2rem;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.95rem;
+        line-height: 1;
+        border-radius: 0.45rem;
+        cursor: pointer;
+      }
+    </style>
   </head>
   <body>
-    
+    <div class="top-bar" aria-label="Quick actions">
+      <button type="button" id="open-info" class="icon-btn secondary" aria-label="Privacy notice" title="Privacy notice">?</button>
+      <button type="button" id="open-settings" class="icon-btn secondary" aria-label="Settings" title="Settings">⚙</button>
+    </div>
+
     <main id="app">
       <!-- EKRAN: privacy  -->
       <section class="screen" data-screen="privacy" hidden>
-        <h2>Privacy notice</h2>
-        <ul id="privacy-text">
-          <li>With a direct connection, the other player can see your IP address.</li>
-          <li>Servers involved: PeerJS (sees your IP and the lobby code), Supabase (public leaderboard with nicknames and times, and the secure connection) and GitHub Pages (hosting).</li>
-          <li>The secure connection sends game messages through the Supabase server, so the other player does not see your IP address. However, this way has set maximum games per month.</li>
-          <li>Do not use your real name as a nickname.</li>
-          <li>Do not share your code to random players.</li>
-        </ul>
-        <div id="privacy-actions">
-          <button id="consent-direct">Accept</button>
-          <button id="consent-relay">Deny, use secure connection</button>
-          <button id="consent-deny" class="secondary">Deny</button>
-        </div>
+          <h2 data-i18n="privacy.title">Privacy notice</h2>
+          <ul id="privacy-text">
+            <li data-i18n="privacy.part1">With a direct connection, the other player can see your IP address.</li>
+            <li data-i18n="privacy.part2">Servers involved: PeerJS (sees your IP and the lobby code), Supabase (public leaderboard with nicknames and times, and the secure connection) and GitHub Pages (hosting).</li>
+            <li data-i18n="privacy.part3">The secure connection sends game messages through the Supabase server, so the other player does not see your IP address. However, this way has set maximum games per month.</li>
+            <li data-i18n="privacy.part4">Do not use your real name as a nickname.</li>
+            <li data-i18n="privacy.part5">Do not share your code to random players.</li>
+          </ul>
+          <div id="privacy-actions">
+            <button id="consent-direct" data-i18n="privacy.accept">Accept</button>
+            <button id="consent-relay" data-i18n="privacy.deny1">Deny, use secure connection</button>
+            <button id="consent-deny" class="secondary" data-i18n="privacy.deny2">Deny</button>
+          </div>
       </section>
-      <div class="lang-switcher" role="group" aria-label="Language switcher">
-        <button type="button" data-lang="pl">PL</button>
-        <button type="button" data-lang="en">EN</button>
-      </div>
+      <!-- EKRAN: how to play -->
+      <section class="screen" data-screen="howtoplay" hidden>
+          <h2 data-i18n="howtoplay.title">How to play</h2>
+          <button type="button" id="howtoplay-back" class="secondary" data-i18n="howtoplay.back">Back</button>
+      </section>
+      <!-- EKRAN: settings -->
+      <section class="screen" data-screen="settings" hidden>
+        <h2 data-i18n="settings.title">Settings</h2>
+        <div class="settings-group">
+          <span class="lead" data-i18n="settings.language">Language</span>
+          <div class="lang-switcher" role="group" aria-label="Language switcher">
+            <button type="button" data-lang="pl">PL</button>
+            <button type="button" data-lang="en">EN</button>
+          </div>
+            <button type="button" id="keys-btn" data-i18n="settings.keys.title">Keybinds</button>
+           <button id="chprivacy" data-i18n="settings.privacy">Change privacy settings</button>
+        </div>
+        <button type="button" data-go="home" class="secondary" data-i18n="settings.back">Back</button>
+      </section>
+
       <!-- EKRAN: start -->
       <section class="screen" data-screen="home">
         <h1 data-i18n="home.title">Find-a-way</h1>
-        <p class = "lead">
-        <span data-i18n="home.about.part1">Two people: </span><br>
-        <span data-i18n="home.about.part2">One sees the map, the other moves through maze.</span>
+        <p class="lead">
+          <span data-i18n="home.about.part1">Two people: </span><br>
+          <span data-i18n="home.about.part2">One sees the map, the other moves through maze.</span>
         </p>
         <form>
           <label for="nick" data-i18n="home.nick">Your nickname:</label>
-          <input type="text" id="nick" maxlength= 10 autocomplete="off" required/>
+          <input type="text" id="nick" maxlength="10" autocomplete="off" required />
 
-          <button  id="create" data-i18n="home.create">Create lobby</button>
-  
+          <button id="create" data-i18n="home.create">Create lobby</button>
+
           <div class="join">
             <label for="code" data-i18n="home.code">Lobby code</label>
             <input id="code" maxlength="8" autocomplete="off" />
@@ -50,7 +93,6 @@
 
           <button id="leaderboard" data-i18n="home.leaderboard">Leaderboard</button>
         </form>
-
       </section>
 
       <!-- EKRAN: lobby -->
@@ -61,17 +103,17 @@
         <p id="lobby-status" class="lead" data-i18n="lobby.waiting">Waiting for the second player…</p>
         <fieldset id="role-set">
           <legend data-i18n="lobby.roles.legend">Roles</legend>
-          <label><input type="radio" name="role" value="mapper"  /><span data-i18n="lobby.roles.mapper"> Mapper</span></label>
-          <label><input type="radio" name="role" value="explorer" /><span data-i18n="lobby.roles.explorer">Explorer </span> </label>
-          <label><input type="radio" name="role" value="random" /><span data-i18n="lobby.roles.random"> Random </span> </label>
+          <label><input type="radio" name="role" value="mapper" /><span data-i18n="lobby.roles.mapper"> Mapper</span></label>
+          <label><input type="radio" name="role" value="explorer" /><span data-i18n="lobby.roles.explorer">Explorer </span></label>
+          <label><input type="radio" name="role" value="random" /><span data-i18n="lobby.roles.random"> Random </span></label>
         </fieldset>
         <fieldset>
           <legend>Level</legend>
-          <label><input type="radio" name="level" value="5" /><span data-i18n="lobby.level.easy"> Easy (5x5) </span> </label>
-          <label><input type="radio" name="level" value="7" /><span data-i18n="lobby.level.medium"> Medium (7x7) </span> </label>
-          <label><input type="radio" name="level" value="9" /><span data-i18n="lobby.level.hard"> Hard (9x9) </span> </label>
-          <label><input type="radio" name="level" value="11" /><span data-i18n="lobby.level.expert"> Expert (11x11) </span> </label>
-          <label><input type="radio" name="level" value="random" /><span data-i18n="lobby.level.random">Random</span> </label>
+          <label><input type="radio" name="level" value="5" /><span data-i18n="lobby.level.easy"> Easy (5x5) </span></label>
+          <label><input type="radio" name="level" value="7" /><span data-i18n="lobby.level.medium"> Medium (7x7) </span></label>
+          <label><input type="radio" name="level" value="9" /><span data-i18n="lobby.level.hard"> Hard (9x9) </span></label>
+          <label><input type="radio" name="level" value="11" /><span data-i18n="lobby.level.expert"> Expert (11x11) </span></label>
+          <label><input type="radio" name="level" value="random" /><span data-i18n="lobby.level.random">Random</span></label>
         </fieldset>
         <button id="start" data-i18n="lobby.start">Start</button>
       </section>
@@ -92,11 +134,10 @@
         </div>
         <div class="board" id="board-explorer"></div>
         <div class="dpad" aria-label="Sterowanie">
-
           <button class="diag" data-move="NW" aria-label="W lewo i w górę" hidden><img src="arrows/dArrow.png" alt="up-left" id="upLeftArrow"></button>
           <button data-move="N" aria-label="W górę"><img src="arrows/nArrow.png" alt="up" id="upArrow" class="arrow"></button>
           <button class="diag" data-move="NE" aria-label="W prawo i w górę" hidden><img src="arrows/dArrow.png" alt="up-right" id="upRightArrow"></button>
-          
+
           <button data-move="W" aria-label="W lewo"><img src="arrows/nArrow.png" alt="left" id="leftArrow" class="arrow"></button>
           <button data-move="E" aria-label="W prawo"><img src="arrows/nArrow.png" alt="right" id="rightArrow" class="arrow"></button>
 
@@ -129,8 +170,8 @@
         <ol id="leaderboard11"></ol>
         <button data-go="home" class="secondary" data-i18n="leaderboard.exit">Exit</button>
       </section>
-
     </main>
+
     <p id="info" class="lead" role="status"></p>
     <script type="module" src="/src/main.ts"></script>
   </body>
