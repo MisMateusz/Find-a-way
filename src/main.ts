@@ -407,7 +407,7 @@ export class NetService {
     this.onOpenCb = onOpen;
     const sid = this.session;
     if (this.relayOnly) {
-      this.status('Connecting through the server...');
+      this.status(t('connection.connecting'));
       this.joinRealtime(code, sid);
       return;
     }

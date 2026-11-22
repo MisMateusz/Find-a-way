@@ -1,4 +1,15 @@
 {
+  "privacy": {
+  "title": "Privacy notice",
+  "part1": "With a direct connection, the other player can see your IP address.",
+  "part2": "Servers involved: PeerJS (sees your IP and the lobby code), Supabase (public leaderboard with nicknames and times, and the secure connection) and GitHub Pages (hosting).",
+  "part3": "The secure connection sends game messages through the Supabase server, so the other player does not see your IP address. However, this way has set maximum games per month.",
+  "part4": "Do not use your real name as a nickname.",
+  "part5": "Do not share your code to random players.",
+  "accept": "Accept",
+  "deny1": "Deny, use secure connection",
+  "deny2": "Deny"
+  },
   "home": {
     "title": "Find-a-way",
     "about": {
@@ -60,6 +71,7 @@
     "notFound": "Lobby not found, or it is full."
   },
   "connection": {
+    "connecting": "Connecting through the server...",
     "trying":"Trying to connect...",
     "tryingAnother": "Trying another server..."
   }

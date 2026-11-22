@@ -11,18 +11,18 @@
     <main id="app">
       <!-- EKRAN: privacy  -->
       <section class="screen" data-screen="privacy" hidden>
-        <h2>Privacy notice</h2>
+        <h2 data-i18n="privacy.title">Privacy notice</h2>
         <ul id="privacy-text">
-          <li>With a direct connection, the other player can see your IP address.</li>
-          <li>Servers involved: PeerJS (sees your IP and the lobby code), Supabase (public leaderboard with nicknames and times, and the secure connection) and GitHub Pages (hosting).</li>
-          <li>The secure connection sends game messages through the Supabase server, so the other player does not see your IP address. However, this way has set maximum games per month.</li>
-          <li>Do not use your real name as a nickname.</li>
-          <li>Do not share your code to random players.</li>
+          <li data-i18n="privacy.part1">With a direct connection, the other player can see your IP address.</li>
+          <li data-i18n="privacy.part2">Servers involved: PeerJS (sees your IP and the lobby code), Supabase (public leaderboard with nicknames and times, and the secure connection) and GitHub Pages (hosting).</li>
+          <li data-i18n="privacy.part3">The secure connection sends game messages through the Supabase server, so the other player does not see your IP address. However, this way has set maximum games per month.</li>
+          <li data-i18n="privacy.part4">Do not use your real name as a nickname.</li>
+          <li data-i18n="privacy.part5">Do not share your code to random players.</li>
         </ul>
         <div id="privacy-actions">
-          <button id="consent-direct">Accept</button>
-          <button id="consent-relay">Deny, use secure connection</button>
-          <button id="consent-deny" class="secondary">Deny</button>
+          <button id="consent-direct" data-i18n="privacy.accept">Accept</button>
+          <button id="consent-relay" data-i18n="privacy.deny1">Deny, use secure connection</button>
+          <button id="consent-deny" class="secondary" data-i18n="privacy.deny2">Deny</button>
         </div>
       </section>
       <div class="lang-switcher" role="group" aria-label="Language switcher">

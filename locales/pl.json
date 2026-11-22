@@ -1,4 +1,15 @@
 {
+  "privacy": {
+  "title": "Polityka prywatności",
+  "part1": "Ta strona korzysta z połaczenia bezpośredniego (P2P) przez co drugi gracz może zobaczyć twój adres IP",
+  "part2": "Wykorzystane serwery: PeerJS (widzi twój adres IP i kod lobby), Supabase (publiczna tabela wyników z nickname'ami oraz uzyskanymi czasami, zawiera ona połaczenie bezpieczne), GitHub Pages (hosting)",
+  "part3": "Bezpieczne połaczenie przechodzi przez serwer Supabase, dzieki temu druga osoba nie ma dostepu do twojego adresu IP. Jednakże - jako, że jesteśmy biednymi studentami to mamy bezpłatna wersje co wiaże sie z limitem gier na miesiac, wiec z drugiej opcji korzystaj jako ostateczność.",
+  "part4": "Nie podawaj swoich prawdziwych danych jako nickname - kto tak w ogóle robi?",
+  "part5": "Nie udostepniaj swojego kodu losowym osobom",
+  "accept": "Akceptuje ",
+  "deny1": "Odrzucam, preferuje bezpieczne połaczenie",
+  "deny2": "Odrzucam"
+  },
   "home": {
     "title": "Find-a-way",
     "about": {
@@ -60,7 +71,8 @@
     "connectionLost": "Utracone połaczenie.",
     "notFound": "Nie udało sie znaleźć pokoju, albo jest pełny."
   },
-    "connection": {
+  "connection": {
+    "connecting": "Łaczenie z serwerem...",
     "trying":"Próba połaczenia z serwerem...",
     "tryingAnother": "Próba połaczenia z innym serwerem..."
   }
