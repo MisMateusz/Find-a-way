@@ -46,6 +46,40 @@ p { margin: 0; }
 .time { font-size: 28px; color: var(--exit); }
 .bar { display: flex; justify-content: space-between; align-items: baseline; }
 
+.lang-switcher {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 1000;
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.lang-btn {
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.75);
+  font: 600 13px/1 system-ui, -apple-system, sans-serif;
+  padding: 7px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.lang-btn:hover {
+  color: #fff;
+}
+
+.lang-btn.is-active {
+  background: #ffffff;
+  color: #0f172a;
+}
+
 button {
   font: 700 18px var(--font);
   padding: 10px 16px;
