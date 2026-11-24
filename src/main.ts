@@ -470,6 +470,7 @@ export class GameSession {
     );
 
     document.getElementById('start')?.addEventListener('click', () => this.startNewGame());
+    document.getElementById('back')?.addEventListener('click', () => this.show('home'));
 
     document.getElementById('board-mapper')?.addEventListener('click', (e) => {
       if (this.assignedRole !== 'mapper') return;
