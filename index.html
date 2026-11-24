@@ -5,34 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Find-a-way</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <style>
-      .top-bar {
-        position: fixed;
-        top: max(0.5rem, env(safe-area-inset-top));
-        right: max(0.5rem, env(safe-area-inset-right));
-        display: flex;
-        gap: 0.35rem;
-        z-index: 20;
-      }
-
-      .icon-btn {
-        width: 2rem;
-        height: 2rem;
-        padding: 0;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.95rem;
-        line-height: 1;
-        border-radius: 0.45rem;
-        cursor: pointer;
-      }
-    </style>
   </head>
   <body>
     <div class="top-bar" aria-label="Quick actions">
-      <button type="button" id="open-info" class="icon-btn secondary" aria-label="Privacy notice" title="Privacy notice">?</button>
-      <button type="button" id="open-settings" class="icon-btn secondary" aria-label="Settings" title="Settings">⚙</button>
+      <button type="button" id="open-chat" class="icon-btn secondary" aria-label="Chat" title="Chat" hidden><img src="chat.png" alt="Chat"></button>
+      <button type="button" id="open-info" class="icon-btn secondary" aria-label="Tips" title="Tips"><img src="tips.png" alt="tips"></button>
+      <button type="button" id="open-settings" class="icon-btn secondary" aria-label="Settings" title="Settings"><img src="settings.png" alt="Settings"></button>
     </div>
 
     <main id="app">
@@ -171,6 +149,14 @@
         <button data-go="home" class="secondary" data-i18n="leaderboard.exit">Exit</button>
       </section>
     </main>
+
+    <div id="chat" hidden>
+      <ol id="chat-log" aria-live="polite"></ol>
+      <div id="chat-row">
+        <input id="chat-input" maxlength="200" autocomplete="off" data-i18n-placeholder="chat.placeholder" placeholder="Message..." />
+        <button type="button" id="chat-send" data-i18n="chat.send">Send</button>
+      </div>
+    </div>
 
     <p id="info" class="lead" role="status"></p>
     <script type="module" src="/src/main.ts"></script>
