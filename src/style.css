@@ -181,9 +181,13 @@
     [hidden] { display: none !important; }
     button:disabled { opacity: 0.5; cursor: not-allowed; }
 
+    .keys-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .keys-row button { font-size: 20px; padding: 10px 0; grid-area: 1/2; }
+    .keys-row span { display: grid; place-items: center; font-size: 12px; color: var(--light); }
+
     #keys-panel {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10;
-      display: grid; gap: 8px; padding: 16px; min-width: 240px;
+      display: grid; gap: 8px; padding: 16px; min-width: 200px;
       background: var(--floor); border: 4px solid var(--ink);
       box-shadow: inset 0 0 0 3px var(--mortar), 0 0 0 100vmax rgba(0, 0, 0, 0.6);
       font-size: 12px;
