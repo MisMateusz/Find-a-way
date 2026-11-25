@@ -16,7 +16,7 @@ export type msg =
 
 const ID_PREFIX = 'findaway-';
 const PEER_TIMEOUT = 10000;
-const NO_BACKUP = 'Backup server is unavailable or paused for this month. Try another browser or network, or come back later.';
+const NO_BACKUP = t('connection.noBackup');
 
 type RtPacket = { k: 'hello' | 'welcome' | 'data'; gid: string; m?: msg };
 
@@ -78,7 +78,7 @@ export class NetService {
     const abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     const code = Array.from({ length: 6 }, () => abc[Math.floor(Math.random() * abc.length)]).join('');
     onCode(code);
-    this.status('Creating lobby...');
+    this.status(t('connection.creatingServer'));
     if (this.relayOnly) {
       this.listenRealtime(code, sid, true);
       return;
@@ -115,7 +115,7 @@ export class NetService {
     this.onOpenCb = onOpen;
     const sid = this.session;
     if (this.relayOnly) {
-      this.status('Connecting through the server...');
+      this.status(t('connection.server'));
       this.joinRealtime(code, sid);
       return;
     }
@@ -236,7 +236,7 @@ export class NetService {
   private lost() {
     this.close();
     this.onClose();
-    this.status('Connection lost.', true);
+    this.status(t('connection.lost'), true);
   }
 
   private fail(text: string) {

@@ -11,6 +11,17 @@
     "join": "Dołacz",
     "leaderboard": "Tablica wyników"
   },
+  "privacy": {
+    "title": "Polityka prywatności",
+    "part1": "Łaczac sie połaczeniem bezposrednim, druga osoba może zobaczyć twój adres IP.",
+    "part2": "Wykorzystane serwery: PeerJS (widzi twój adres IP oraz kod lobby), Supabase (publiczna tablica wyników posiadajaca dostęp do nickname'ów oraz czasów z bezpiecznym połaczeniem) oraz GitHub Pages (hosting).",
+    "part3": "Bezpieczne połaczenie wysyła komunikaty sieciowe przez serwer Supabase, przez co druga osoba nie widzi twojego adresu IP. Jednakże wiaże sie to z limitem maksymalnej liczby gier na miesiac (korzystamy z bezpłatnej wersji).",
+    "part4": "Nie używaj swojego prawdziwego imienia i nazwiska jako nickname.",
+    "part5": "Nie podawaj swojego kodu nieznajomym.",
+    "accept": "Akceptuje",
+    "deny1": "Odrzucam, chce użyć bezpiecznego połaczenia",
+    "deny2": "Odrzucam"
+  },
   "lobby": {
     "title": "Poczekalnia",
     "codeLabel": "Kod pokoju:",
@@ -55,6 +66,11 @@
   },
   "howtoplay": {
     "title": "Jak grać",
+    "ch1Title": "Wstep",
+    "ch2Title": "Hostowanie",
+    "ch3Title": "Cel gry",
+    "ch4Title": "Mapper",
+    "ch5Title": "Eksplorer",
     "back": "Wyjdź"
   },
     "settings": {
@@ -84,8 +100,12 @@
     "notFound": "Nie udało sie znaleźć pokoju, albo jest pełny.",
     "privacy": "Ups, z ta opcja nie korzystać z naszego serwisu, wybierz inna aby kontynuować"
   },
-    "connection": {
+  "connection": {
     "trying":"Próba połaczenia z serwerem...",
-    "tryingAnother": "Próba połaczenia z innym serwerem..."
+    "tryingAnother": "Próba połaczenia z innym serwerem...",
+    "creatingServer": "Tworzenie lobby...",
+    "noBackup": "Zapasowy serwer jest niedostepny lub zatrzymany w tym miesiacu. Spróbuj połaczyć sie przez inna przeglądarke lub sieć, albo spróbuj ponownie później.",
+    "lost": "Utracono połaczenie",
+    "server": "Łaczenie przez serwer..."
   }
 }
