@@ -274,4 +274,5 @@
     #chat-input { text-transform: none; font-size: 12px; padding: 6px 8px; }
     #chat-send { font-size: 12px; padding: 6px 10px; }
     #open-chat.unread { box-shadow: 0 0 0 3px var(--exit); }
+    #lobby-summary { display: grid; gap: 8px; }
     #sum-role, #sum-level { color: var(--exit); }
