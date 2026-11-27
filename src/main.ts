@@ -8,6 +8,9 @@ import { NetService, validMessage, type msg } from './core/net';
 import { GameView } from './core/view';
 import { Chat } from './core/chat';
 
+const ROLE_KEYS: Record<string, string> = { mapper: 'lobby.roles.mapper', explorer: 'lobby.roles.explorer', random: 'lobby.roles.random' };
+const LEVEL_KEYS: Record<string, string> = { '5': 'lobby.level.easy', '7': 'lobby.level.medium', '9': 'lobby.level.hard', '11': 'lobby.level.expert', random: 'lobby.level.random' };
+
 type Screen = 'home' | 'lobby' | 'mapper' | 'explorer' | 'result' | 'leaderboard' | 'privacy' | 'settings' | 'howtoplay';
 
 // Klasa GameSession 
@@ -20,7 +23,7 @@ export class GameSession {
   overlayReturn: Screen = 'home';
   isHost = false;
   assignedRole: 'mapper' | 'explorer' = 'explorer';
-  guestVote?: string;
+  lobbyView = { role: '', level: '' };
   secondNick?: string;
   lastMs = 0;
   keys: Record<Dir, string> = loadKeys();
@@ -78,6 +81,9 @@ export class GameSession {
 
     if (name === 'lobby') {
       document.getElementById('role-set')!.hidden = !this.isHost;
+      document.getElementById('level-set')!.hidden = !this.isHost;
+      document.getElementById('lobby-summary')!.hidden = this.isHost;
+      this.renderSummary();
       this.updateLobbyStatus();
     }
 
@@ -93,6 +99,12 @@ export class GameSession {
       document.querySelectorAll<HTMLElement>('.diag').forEach((b) => (b.hidden = !this.state.maze.ext));
       this.startTimer('#timer2');
     }
+  }
+
+  renderSummary() {
+    const label = (keys: Record<string, string>, v: string) => (keys[v] ? t(keys[v]).trim() : '---');
+    document.getElementById('sum-role')!.textContent = label(ROLE_KEYS, this.lobbyView.role);
+    document.getElementById('sum-level')!.textContent = label(LEVEL_KEYS, this.lobbyView.level);
   }
 
   updateLobbyStatus() {
@@ -214,10 +226,12 @@ export class GameSession {
       case 'player-join':
         this.secondNick = m.nick;
         this.updateLobbyStatus();
+        this.sendSettings();
         break;
-      
-      case 'vote':
-        this.guestVote = m.level;
+
+      case 'settings':
+        this.lobbyView = { role: m.role, level: m.level };
+        this.renderSummary();
         break;
 
       case 'refresh_top':
@@ -278,9 +292,11 @@ export class GameSession {
     );
   }
 
-  sendVote() {
-    const level = document.querySelector<HTMLInputElement>('input[name="level"]:checked')?.value ?? '5';
-    this.net.send({ t: 'vote', level });
+  sendSettings() {
+    const pick = (name: string) => document.querySelector<HTMLInputElement>(`input[name="${name}"]:checked`)?.value ?? '';
+    const mine = pick('role');
+    const role = mine === 'mapper' ? 'explorer' : mine === 'explorer' ? 'mapper' : mine;
+    this.net.send({ t: 'settings', role, level: pick('level') });
   }
 
   startNewGame() {
@@ -294,9 +310,7 @@ export class GameSession {
     this.assignedRole = hostRole;
     const guestRole: 'mapper' | 'explorer' = hostRole === 'mapper' ? 'explorer' : 'mapper';
 
-    const hostVote = document.querySelector<HTMLInputElement>('input[name="level"]:checked')?.value ?? '5';
-    const votes = [hostVote, this.guestVote ?? hostVote];
-    this.settings.difficulty = votes[Math.floor(Math.random() * votes.length)];
+    this.settings.difficulty = document.querySelector<HTMLInputElement>('input[name="level"]:checked')?.value ?? '5';
 
     const size = this.settings.getMazeSize();
     this.state = new GameState(size);
@@ -404,14 +418,12 @@ export class GameSession {
       }
 
       this.isHost = true;
-      this.guestVote = undefined;
       this.secondNick = undefined;
       this.chat.clear();
       codeEl.textContent = '…';
       this.net.host(
         (code) => (codeEl.textContent = code),
         () => {
-          this.guestVote = undefined;
           this.secondNick = undefined;
           this.show('lobby');
           this.updateLobbyStatus();
@@ -451,11 +463,11 @@ export class GameSession {
       }
       
       this.isHost = false;
+      this.lobbyView = { role: '', level: '' };
       this.chat.clear();
       this.net.join(code, () => {
         codeEl.textContent = code;
         this.show('lobby');
-        this.sendVote();
         
         if (this.net.connected) {
           this.net.send({ t: 'player-join', nick: nickVal });
@@ -463,9 +475,9 @@ export class GameSession {
       });
     });
 
-    document.querySelectorAll<HTMLInputElement>('input[name="level"]').forEach((r) =>
+    document.querySelectorAll<HTMLInputElement>('input[name="role"], input[name="level"]').forEach((r) =>
       r.addEventListener('change', () => {
-        if (!this.isHost) this.sendVote();
+        if (this.isHost) this.sendSettings();
       }),
     );
 

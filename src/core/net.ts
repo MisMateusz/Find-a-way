@@ -9,7 +9,7 @@ export type msg =
 | { t: 'init', role: 'mapper' | 'explorer', maze: Labirynth } 
 | { t: 'rotation', i: number, rotation: number }
 | { t: 'player-join', nick: string }
-| { t: 'vote', level: string }
+| { t: 'settings', role: string, level: string }
 | {t: 'refresh_top'}
 | { t: 'chat', text: string }
 | { t: 'end', result: 'win' | 'trap' };
@@ -36,8 +36,8 @@ export function validMessage(m: msg, isHost: boolean, sender: 'mapper' | 'explor
       return sender === 'mapper' && Number.isInteger(m.i) && m.i >= 0 && m.i < tileCount && (m.rotation === 90 || m.rotation === -90);
     case 'end':
       return sender === 'explorer' && (m.result === 'win' || m.result === 'trap');
-    case 'vote':
-      return isHost && ['5', '7', '9', '11', 'random'].includes(m.level);
+    case 'settings':
+      return !isHost && ['mapper', 'explorer', 'random', ''].includes(m.role) && ['5', '7', '9', '11', 'random', ''].includes(m.level);
     case 'player-join':
       return isHost && typeof m.nick === 'string';
     case 'refresh_top':

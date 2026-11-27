@@ -1,7 +1,7 @@
 import { t } from './i18n';
 
-const MAX_LEN = 200;
-const MAX_LINES = 50;
+const MAX_LEN = 50;
+const MAX_LINES = 10;
 const MIN_OUT_GAP_MS = 1000;
 const MIN_IN_GAP_MS = 250;
 

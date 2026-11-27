@@ -84,13 +84,17 @@
         <p data-i18n="lobby.codeLabel">Lobby code:</p>
         <p class="code" id="lobby-code">HI4UNU</p>
         <p id="lobby-status" class="lead" data-i18n="lobby.waiting">Waiting for the second player…</p>
+        <div id="lobby-summary" hidden>
+          <p><span data-i18n="lobby.summary.role">Your role:</span> <span id="sum-role">---</span></p>
+          <p><span data-i18n="lobby.summary.level">Chosen difficulty:<br /></span> <span id="sum-level">---</span></p>
+        </div>
         <fieldset id="role-set">
           <legend data-i18n="lobby.roles.legend">Roles</legend>
           <label><input type="radio" name="role" value="mapper" /><span data-i18n="lobby.roles.mapper"> Mapper</span></label>
           <label><input type="radio" name="role" value="explorer" /><span data-i18n="lobby.roles.explorer">Explorer </span></label>
           <label><input type="radio" name="role" value="random" /><span data-i18n="lobby.roles.random"> Random </span></label>
         </fieldset>
-        <fieldset>
+        <fieldset id="level-set">
           <legend>Level</legend>
           <label><input type="radio" name="level" value="5" /><span data-i18n="lobby.level.easy"> Easy (5x5) </span></label>
           <label><input type="radio" name="level" value="7" /><span data-i18n="lobby.level.medium"> Medium (7x7) </span></label>

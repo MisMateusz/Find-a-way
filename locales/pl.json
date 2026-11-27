@@ -41,6 +41,9 @@
       "expert": "Ekspert (11x11)",
       "random": "Losowy"
     },
+    "summary": { 
+      "role": "Twoja rola:", 
+      "level": "Wybrany poziom trudności:" },
     "start": "Start"
   },
     "mapper": {

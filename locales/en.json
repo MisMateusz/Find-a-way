@@ -41,6 +41,9 @@
       "expert": "Expert (11x11)",
       "random": "Random"
     },
+    "summary": { 
+      "role": "Your role:", 
+      "level": "Chosen difficulty:" },
     "start": "Start"
   },
   "mapper": {
@@ -107,4 +110,5 @@
     "lost": "Connection lost.",
     "server": "Connecting through the server..."
   }
+  
 }
